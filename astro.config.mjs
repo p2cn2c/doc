@@ -15,7 +15,7 @@ export default defineConfig({
     // image(),
   ],
   site: "https://p2cn2c.github.io",
-  base: "p2cn2c/",
+  base: "/p2cn2c",
   // build: {
   //   inlineStylesheets: true,
   //   assets: "p2cn2c/",
