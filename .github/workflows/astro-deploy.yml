@@ -18,33 +18,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out your repository using git
-        uses: actions/checkout@v2
-
-      - name: Use Node.js 18.14.1
-        uses: actions/setup-node@v2
-        with:
-          node-version: "18.14.1"
-          cache: "npm"
-
-      # Not using npm? Change `npm ci` to `yarn install` or `pnpm i`
-      - name: Install dependencies
-        run: yarn install
-
-      # Not using npm? Change `npm run build` to `yarn build` or `pnpm run build`
-      - name: Build Astro
-        run: yarn build --if-present
+        uses: actions/checkout@v3
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: withastro/action@v1
         with:
           path: ./dist
+          node-version: "18.14.1"
+          package-manager: yarn
 
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
