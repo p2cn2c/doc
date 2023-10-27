@@ -16,6 +16,10 @@ export const OPEN_GRAPH = {
 };
 
 export const SIDEBAR = [
+  { text: "react.dev", header: true },
+  { text: "Introduction", link: "/react/introduction" },
+  { text: "Describing the UI", link: "/react/describing-the-ui" },
+
   { text: "Core", header: true },
   { text: "Introduction", link: "/core/introduction" },
   { text: "Colors", link: "/core/colors" },
