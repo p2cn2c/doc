@@ -19,13 +19,8 @@ jobs:
     steps:
       - name: Check out your repository using git
         uses: actions/checkout@v3
-
-      - name: Upload artifact
+      - name: Install, build, and upload your site output
         uses: withastro/action@v1
-        with:
-          path: ./dist
-          node-version: "18.14.1"
-          package-manager: yarn
 
   deploy:
     needs: build
