@@ -21,9 +21,9 @@ export default defineConfig({
   //   assets: "p2cn2c/",
   // },
   // Resolves to the "./foo" directory, relative to this config file
-  root: new URL("./src", import.meta.url).toString(),
+  // root: new URL("./src", import.meta.url).toString(),
   // Resolves to the "./public" directory, relative to this config file
-  publicDir: new URL("./public", import.meta.url).toString(),
+  // publicDir: new URL("./public", import.meta.url).toString(),
   // vite: {
   //   build: {
   //     rollupOptions: {
