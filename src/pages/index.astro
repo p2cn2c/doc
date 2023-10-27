@@ -1,35 +1,38 @@
 ---
-import { SITE } from "../config";
+import { SITE, DEFAULT_URL } from "../config";
 const navItems = [
 {
 		title: 'react.dev',
 		description: 'https://react.dev/learn/',
-		url: '/react/introduction',
-		img: '/Core.jpg'
+		url: `${DEFAULT_URL}/react/introduction`,
+		img: `/Core.jpg`
 	},
 	{
 		title: 'Core',
 		description: 'Base colors, typography, shadows, and more.',
-		url: '/core/introduction',
-		img: '/Core.jpg'
+		url: `${DEFAULT_URL}/core/introduction`,
+		img: `/Core.jpg`
 	},
 	{
 		title: 'Components',
 		description: 'The building blocks for our UI.',
-		url: '/components/buttons',
-		img: '/Components.jpg'
+		url: `${DEFAULT_URL}/components/buttons`,
+		img: `/Components.jpg`
 	},
 	{
 		title: 'Patterns',
 		description: 'Common patterns for building interfaces.',
-		url: '/patterns/introduction',
-		img: '/Patterns.jpg'
+		url: `${DEFAULT_URL}/patterns/introduction`,
+		img: `/Patterns.jpg`
 	}
 ]
 
 ---
 
-
+<head>
+	<link rel="stylesheet" href="/styles/main.css" />
+	<!-- External -->
+</head>
 
 <div class="bg-slate-100 min-h-screen text-center">
 	<header class="pt-12 pb-24 px-4 bg-gradient-to-br from-slate-700 to-black">

@@ -16,7 +16,7 @@ const currentPage = new URL(Astro.request.url).pathname;
 <html dir={content.dir ?? 'ltr'} lang={content.lang ?? 'en-us'} class="initial">
 	<head>
 		<HeadCommon />
-		<HeadSEO {content} canonicalURL={Astro.canonicalURL} />
+		<!-- <HeadSEO {content} canonicalURL={Astro.canonicalURL} /> -->
 		<title>{content.title ? `${content.title} 🚀 ${CONFIG.SITE.title}` : CONFIG.SITE.title}</title>
 	</head>
 

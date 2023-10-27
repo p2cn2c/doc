@@ -1,11 +1,11 @@
 {
-  "name": "@example/docs",
+  "name": "@whewchews/docs",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "rm -rf dist && astro build ",
     "preview": "astro preview"
   },
   "dependencies": {
@@ -14,16 +14,21 @@
     "@docsearch/css": "^3.0.0",
     "@docsearch/react": "^3.0.0",
     "@types/react": "^17.0.43",
+    "autoprefixer": "^10.4.16",
+    "cssnano": "^6.0.1",
     "preact": "^10.7.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "sass": "^1.50.0",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.2.2",
     "vue": "3.2"
   },
   "devDependencies": {
+    "@astrojs/image": "^0.18.0",
     "@astrojs/preact": "^0.0.2",
-    "@astrojs/react": "^0.1.0",
-    "@astrojs/tailwind": "^0.1.0",
-    "astro": "^1.0.0-beta.5"
+    "@astrojs/react": "^3.0.4",
+    "@astrojs/tailwind": "^5.0.2",
+    "astro": "^3.4.0"
   }
 }
