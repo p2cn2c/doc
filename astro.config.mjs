@@ -1,11 +1,15 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
 import vue from "@astrojs/vue";
+import react from "@astrojs/react";
+import mdx from "@astrojs/mdx";
 
 // https://astro.build/config
 export default defineConfig({
+  renderers: ["@astrojs/renderer-react"],
   integrations: [
     // Enable Preact to support Preact JSX components.
+    react(),
     vue(),
     tailwind({
       // Example: Provide a custom path to a Tailwind config file
@@ -13,6 +17,7 @@ export default defineConfig({
       // applyBaseStyles: false,
     }),
     // image(),
+    mdx(),
   ],
   site: "https://p2cn2c.github.io",
   base: "/p2cn2c",
