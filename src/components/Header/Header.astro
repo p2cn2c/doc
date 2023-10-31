@@ -1,15 +1,16 @@
 ---
-import { SITE } from '../../config';
+import { SITE, DEFAULT_URL } from '../../config';
 import SkipToContent from './SkipToContent.astro';
 
 const { currentPage } = Astro.props;
+
 ---
 
 <header class="p-3 bg-slate-100 bg-opacity-80 backdrop-blur-md border-b text-slate-900">
 	<SkipToContent />
 	<nav title="Top Navigation" class="max-w-7xl mx-auto flex justify-between items-center px-4">
 		<div>
-			<a class="text-lg font-medium" href="/">
+			<a class="text-lg font-medium" href={DEFAULT_URL}>
 				<h1>
 					{SITE.title ?? "Documentation"}
 				</h1>

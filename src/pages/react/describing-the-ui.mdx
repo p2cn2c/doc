@@ -2,26 +2,778 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import ReactSample from "../../components/ReactSample.jsx";
 
 <MainLayout>
-## All buttons
+# CH1. Describing the UI
+`React is a JavaScript library for rendering user interfaces (UI). 
+UI is built from small units like buttons, text, and images. 
+React lets you combine them into reusable, nestable components. 
+From web sites to phone apps, everything on the screen can be broken down into components. 
+In this chapter, you’ll learn to create, customize, and conditionally display React components.`
 
-This page is an example on how to document your button components, most of the copy was written by AI so don't take it very seriously.
+- 리액트는 UI를 렌더링 하기 위한 JS 라이브러리입니다.
+- UI는 작은 단위로 이루어집니다.
+- React를 사용하면 작은 단위들을 결합해 재사용 가능하고 중첩가능한 컴포넌트를 결합할 수 있습니다.
 
-Find the code for this page in the `src/pages/components/buttons.md` file.
+## 1. Your first component
 
-<div class="component-preview">
+- How to write your first React component
+- 리액트 컴포넌트를 만드는 방법
 
-<ReactSample></ReactSample>
-</div>
+> a React component is a JavaScript function that you can sprinkle with markup.
+
+- React 컴포넌트는 마크업을 뿌릴 수 있는 JS 함수입니다.
 
 ```js
-export default function ReactSample({ children }) {
-  const [data, setData] = useState(1);
+function Profile() {
+  // 한 줄 일 때는 return문 옆에 괄호 없어도 가능함.
+  return <img src="https://i.imgur.com/MK3eW3As.jpg" alt="Katherine Johnson" />;
+}
+
+export default function Gallery() {
+  // 마크업이 return 키워드와 모두 같은 줄에 있지 않으면 괄호루 묶어주어야 함.
+  // 리액트 컴포넌트는 대문자로 시작함.
+  // 리액트 컴포넌트는 JSX 마크업을 return함.
+  // 단, 구성요소는 다른 구성요소를 렌더링할 수 있지만 정의를 중첩해서는 안됨. 모든 구성요소는 최상위에서 정의할 것.
+  return (
+    <section>
+      <h1>Amazing scientists</h1>
+      <Profile />
+      <Profile />
+      <Profile />
+    </section>
+  );
+}
+```
+
+### Challenge
+
+```js
+// 1. 내보내기 : export default
+// 2. return문은 한줄에 있는게 아니면 ()로 묶여야 함
+// 3. 리액트 컴포넌트 이름은 대문자여야 함.
+
+export default function Profile() {
+  return (
+    <img
+      src="https://i.imgur.com/lICfvbD.jpg"
+      alt="Aklilu Lemma"
+    />
+  );
+}
+
+export default function Gallery() {
+  return (
+    <section>
+      <h1>Amazing scientists</h1>
+      <Profile />
+      <Profile />
+      <Profile />
+    </section>
+  );
+}
+
+export default function NewComponent(){
+  return <p>HELLO!</p>
+}
+
+```
+
+## 2. Importing and exporting components
+
+- When and how to create multi-component files
+- 컴포넌트를 여러개의 파일을 만드는 시기와 방법
+
+- 점점 더 많은 컴포넌트를 중첩할수록 컴포넌트를 다른 파일로 분리하는 것이 합리적일 때가 많습니다.
+- 이를 통해 파일을 쉽게 찾고, 더 많은 곳에서 컴포넌트를 재사용할 수 있습니다.
+
+- 루트 컴포넌트가 존재합니다. React에서는 `App.js`를 보통 루트 컴포넌트로 사용합니다.
+
+- 'export default [name] / import [name] from [file path]' : 기본 내보내기/ 가져오기
+- 'export [name] / import { '[name]' } from [file path]' : 명명된(named) 내보내기/가져오기
+- 항상 컴포넌트 이름과 파일에 의미있는 이름을 사용하세요.
+- 이름 없는 컴포넌트는 디버깅을 어렵게 만들기 때문에 권장하지 않습니다.
+
+```js
+// App.js
+import Gallery from './Gallery.js';
+
+export default function App() {
+  return (
+    <div>
+      <Gallery />
+    </div>
+  );
+}
+
+// Gallery.js
+import Profile from './Profile.js';
+
+export default function Gallery() {
+  return (
+    <section>
+      <h1>Amazing scientists</h1>
+      <Profile />
+      <Profile />
+      <Profile />
+    </section>
+  );
+}
+
+// Profile.js
+export default function Profile() {
+  return (
+    <img
+      src="https://i.imgur.com/QIrZWGIs.jpg"
+      alt="Alan L. Hart"
+    />
+  );
+}
+
+```
+
+## 3. Writing markup with JSX
+
+- How to add markup to JavaScript with JSX
+- JSX를 사용해 JS에 마크업을 추가하는 방법
+
+- JSX는 JS내에 HTML과 유사한 마크업을 작성할 수 있게 해주는 JS 문법확장입니다. JSX는 HTML과 비슷해보이지만 더 엄격하고 동적으로 정보를 표시할 수 있습니다.
+- 웹은 HTML, CSS, JS를 기반으로 구축됩니다. 콘텐츠는 HTML로, 디자인은 CSS로, 로직은 JS로 작성하며 별도의 파일로 보관하기도 합니다.
+- BUT 웹이 발전하며 상호작용이 늘어나고, 콘텐츠와 로직이 강하게 연관되기 시작했습니다. 때문에 React는 렌더링 로직와 마크업을 둘 다 컴포넌트에서 함께 관리합니다.
+
+### JSX 규칙
+
+- Return a single root element 하나의 태그로 감싸져 있어야 합니다.
+
+  - WHY? JSX는 HTML이 아니라 JS 객체로 변환되기 때문입니다. 두 객체를 배열로 랩핑하지 않으면 함수는 두 객체를 반환할 수 없습니다.
+  - +div 태그를 추가로 만들고 싶지 않다면 Fragment(`<></>`) 태그를 사용하세요. Fragment를 사용하면 브라우저 HTML Tree 에 흔적을 남기지 않고 그룹을 만들 수 있습니다.
+
+- Close all the tags 모든 태그를 닫습니다.
+
+- camelCase all most of the things! 카멜케이스는 거의 모든 것 !
+- JSX는 JS로 변환되고, JSX로 작성된 속성은 JS 객체의 key가 됩니다.
+- JS에서는 변수 이름에 제한이 있습니다. 이름에는 -가 포함되거나 class와 같은 예약어를 사용할 수 없습니다.
+- 때문에 React에서는 많은 속성이 camelCase로 작성되어있습니다.
+- class는 예약어이기 때문에 className으로 작성합니다.
+- BUT 역사적인 이유로 aria-*속성 data-*은 대시를 사용하여 HTML로 작성됩니다.
+
+#### Challenge
+
+```js
+export default function Bio() {
   return (
     <>
-      <h1>111</h1>
+    <div className="intro">
+      <h1>Welcome to my website!</h1>
+    </div>
+    <p className="summary">
+      You can find my thoughts here.
+      <br><br>
+      <b>And <i>pictures</b></i> of scientists!
+    </p>
     </>
   );
 }
 ```
+
+## 4. JavaScript in JSX with curly braces
+
+- How to use curly braces with JSX to access JavaScript functionality from your components
+- JSX에서 중괄호`{}`를 사용해 컴포넌트의 JS 기능에 접근하는 방법
+
+- 중괄호를 사용해 동적 속성에 접근할 수 있습니다.
+- 이중 중괄호를 사용해 객체를 전달할 수 있습니다.
+
+#### Challenge
+
+```js
+// person.name으로 object가 아닌 문자열
+
+const baseUrl = "https://i.imgur.com/";
+const person = {
+  name: "Gregorio Y. Zara",
+  imageId: "7vQD0fP",
+  imageSize: "s",
+  theme: {
+    backgroundColor: "black",
+    color: "pink",
+  },
+};
+
+export default function TodoList() {
+  return (
+    <div style={person.theme}>
+      <h1>{person.name}'s Todos</h1>
+      <img
+        className="avatar"
+        src={`${baseUrl}${person.imageId}${person.imageSize}.jpg`}
+        alt={person.name}
+      />
+      <ul>
+        <li>Improve the videophone</li>
+        <li>Prepare aeronautics lectures</li>
+        <li>Work on the alcohol-fuelled engine</li>
+      </ul>
+    </div>
+  );
+}
+```
+
+## 5. Passing props to a component
+
+- How to configure components with props
+- props를 사용해 컴포넌트를 정의하는 방법
+
+- React 컴포넌트는 props를 사용해 서로 통신합니다.
+- 상위 컴포넌트는 하위 컴포넌트로 정보(객체, 배열, 함수 등 모든 JS 값)를 전달할 수 있습니다.
+
+STEP1. props 를 하위 컴포넌트에 전달
+STEP2. 하위 컴포넌트에서 내부 props 읽기
+
+```js
+// props 객체를 props라는 인수로 받아서 사용할 수 있지만, 대부분의 경우 props 객체 자체는 필요하지 않기 때문에 개별 prop으로 구조분해할당 해서 사용합니다.
+function Avatar(props) {
+  let person = props.person;
+  let size = props.size;
+  // ...
+}
+
+// 매개변수 바로 뒤에 기본값을 넣어 구조분해 할당을 해줄 수 있습니다.
+// 기본값은 해당 prop이 없거나 undefined를 전달한 경우에만 사용됩니다. null 이나 0을 전달한 경우에는 사용되지 않습니다.
+function Avatar({ person, size = 100 }) {
+  // ...
+}
+
+// 모든 소품을 전달할 때는 JSX 스프레드 구문을 사용해 prop을 전달할 수 있습니다.
+function Profile(props) {
+  return (
+    <div className="card">
+      <Avatar {...props} />
+    </div>
+  );
+}
+
+// JSX를 자식으로 전달할 때는 children으로 해당 콘텐츠를 받습니다.
+import Avatar from "./Avatar.js";
+
+function Card({ children }) {
+  return <div className="card">{children}</div>;
+}
+
+export default function Profile() {
+  return (
+    <Card>
+      <Avatar
+        size={100}
+        person={{
+          name: "Katsuko Saruhashi",
+          imageId: "YfeOqp2",
+        }}
+      />
+    </Card>
+  );
+}
+```
+
+- props는 시간에 따른 읽기 전용 스냅샷입니다. 모든 렌더링에는 새로운 버전의 prop이 수신됩니다.
+- props는 변경할 수 없습니다. 상호작용이 필요한 경우는 state를 설정해야 합니다.
+
+  `props는 불변 입니다 .
+구성 요소가 props를 변경해야 하는 경우(예: 사용자 상호 작용 또는 새 데이터에 대한 응답으로)
+상위 구성 요소에 다른 props , 즉 새 객체를 전달하도록 "요청"해야 합니다 !
+그런 다음 오래된 props는 폐기되고 결국 JavaScript 엔진은 해당 props가 차지한 메모리를 회수하게 됩니다.`
+
+#### Challenge
+
+```js
+// 1. extract props
+import { getImageUrl } from './utils.js';
+export function Profile({name, img, profession, discovery, awards}) {
+
+  return (
+     <section className="profile">
+        <h2>{name}</h2>
+        <img
+          className="avatar"
+          src={getImageUrl(img.src)}
+          alt={img.alt}
+          width={img.width}
+          height={img.height}
+        />
+        <ul>
+          <li>
+            <b>Profession: </b>
+            {profession}
+          </li>
+          <li>
+            <b>Awards: {awards.length} </b>
+            {awards.join(', ')}
+          </li>
+          <li>
+            <b>Discovered: </b>
+            {discovery}
+          </li>
+        </ul>
+      </section>
+  )
+}
+
+export default function Gallery() {
+  return (
+    <div>
+      <h1>Notable Scientists</h1>
+      <Profile
+        name="Maria Skłodowska-Curie"
+        img={{
+          src:"szV5sdG",
+          alt:"Maria Skłodowska-Curie",
+          width:70,
+          imgHeight:70,
+        }}
+        profession="physicist and chemist"
+        discovery="polonium (chemical element)"
+        awards={[
+          'Nobel Prize in Physics',
+          'Nobel Prize in Chemistry',
+          'Davy Medal',
+          'Matteucci Medal'
+        ]}
+        prize={['physicist and chemist',]}
+      />
+     <Profile
+        name="Katsuko Saruhashi"
+        img={{
+          src:"YfeOqp2",
+          alt:"Katsuko Saruhashi",
+          width:70,
+          imgHeight:70,
+        }}
+        profession='geochemist'
+        discovery="a method for measuring carbon dioxide in seawater"
+        awards={[
+          'Miyake Prize for geochemistry',
+          'Tanaka Prize'
+        ]}
+      />
+    </div>
+  );
+}
+
+// 2. adjust img size based on a prop
+import { getImageUrl } from './utils.js';
+
+function Avatar({ person, size }) {
+  let thumbnailSize = size > 90 ? 'b' : 's'
+  return (
+    <img
+      className="avatar"
+      src={getImageUrl(person, thumbnailSize)}
+      alt={person.name}
+      width={size}
+      height={size}
+    />
+  );
+}
+
+export default function Profile() {
+  return (
+    <>
+    <Avatar
+      size={40}
+      person={{
+        name: 'Gregorio Y. Zara',
+        imageId: '7vQD0fP'
+      }}
+    />
+     <Avatar
+      size={90}
+      person={{
+        name: 'Gregorio Y. Zara',
+        imageId: '7vQD0fP'
+      }}
+    />
+  </>
+  );
+}
+
+// 3. passing JSX in a children prop
+export function Card({children}){
+  return (
+     <div className="card">
+        <div className="card-content">
+          {children}
+       </div>
+     </div>
+  )
+}
+
+export default function Profile() {
+  return (
+    <div>
+      <Card>
+          <h1>Photo</h1>
+          <img
+            className="avatar"
+            src="https://i.imgur.com/OKS67lhm.jpg"
+            alt="Aklilu Lemma"
+            width={70}
+            height={70}
+          />
+      </Card>
+      <Card>
+          <h1>About</h1>
+          <p>Aklilu Lemma was a distinguished Ethiopian scientist who discovered a natural treatment to schistosomiasis.</p>
+      </Card>
+   </div>
+  );
+}
+
+
+```
+
+## 6. Conditional rendering
+
+- How to conditionally render components
+- 컴포넌트를 조건부로 렌더링하는 방법
+
+- 조건부로 if문과 return 을 사용해 분기할 수 있습니다.
+- 아무것도 반환하지 않으려고 할 때도 컴포넌트는 return값을 줘야 합니다. 이럴 경우 null을 return합니다.
+- 삼항연산자를 사용해 코드를 DRY(Don't Repeat Yourself)하게 만들 수 있습니다.
+
+```js
+return <li className="item">{isPacked ? name + " ✔" : name}</li>;
+```
+
+- 조건이 true일 때 JSX를 렌더링 하거나, 아니면 아무것도 렌더링 하지 않으려는 경우에 && 연산자를 사용합니다.
+- 왼쪽(조건)에 숫자를 넣지 마세요. 0도 렌더링 합니다.
+
+```js
+return (
+  <li className="item">
+    {name} {isPacked && "✔"}
+  </li>
+);
+
+function Item({ name, isPacked }) {
+  let itemContent = name;
+  if (isPacked) {
+    itemContent = name + " ✔";
+  }
+  return <li className="item">{itemContent}</li>;
+}
+```
+
+#### Challenge
+
+```js
+// 1. Show an icon for incomplete items with ? :
+function Item({ name, isPacked }) {
+  return (
+    <li className="item">
+      {name} {isPacked ? "✔" : " ❌ "}
+    </li>
+  );
+}
+
+// 2. importance
+function Item({ name, importance }) {
+  return (
+    <li className="item">
+      {name} {importance > 0 && "(Importance: " + importance + ")"}
+    </li>
+  );
+}
+
+// 3. Refactor a series of ? : to if and variables
+function Drink({ name }) {
+  let part, caffeine, age;
+
+  switch (name) {
+    case "tea":
+      {
+        part = "leaf";
+        caffeine = "15–70 mg/cup";
+        age = "4,000+ years";
+      }
+      break;
+
+    case "coffee":
+      {
+        part = "bean";
+        caffeine = "80–185 mg/cup";
+        age = "1,000+ years";
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return (
+    <section>
+      <h1>{name}</h1>
+      <dl>
+        <dt>Part of plant</dt>
+        <dd>{part}</dd>
+        <dt>Caffeine content</dt>
+        <dd>{caffeine}</dd>
+        <dt>Age</dt>
+        <dd>{age}</dd>
+      </dl>
+    </section>
+  );
+}
+```
+
+## 7. Rendering lists
+
+- How to render multiple components at a time
+- 여러 컴포넌트를 한번에 렌더링하는 방법
+
+- STEP1. 데이터를 배열로 만듭니다.
+- STEP2. 새로운 JSX 노드 배열로 매핑합니다.
+- STEP3. 랩핑된 컴포넌트에서 return해줍니다.
+
+- 배열의 항목을 순서대로 유지하기 위해서는 고유 식별 key가 필요합니다. key는 배열의 각 항목을 고유하게 식별할 수 있는 문자열 또는 숫자입니다.
+- 배열이 이동, 삽입, 삭제 되는 경우 key로 React가 무슨 일이 일어났는지 추론하고 DOM트리를 올바르게 업데이트 할 수 있습니다.
+- key는 형제간에 고유한 값이어야 합니다. 다른 배열의 JSX노드에 동일한 키를 사용하는 것은 괜찮습니다.
+- key는 변경되어서는 안됩니다. 렌더링하는 동안 생성하지 않고 미리 생성한 값 또는 DB에서 온 값이나 uuid를 사용하세요.
+
+```js
+import { people } from "./data.js";
+import { getImageUrl } from "./utils.js";
+
+let chemistList = [];
+let notChemistList = [];
+people.forEach((person) => {
+  person.profession === "chemist"
+    ? chemistList.push(person)
+    : notChemistList.push(person);
+});
+
+function ListSection({ title, people }) {
+  return (
+    <>
+      <h2>{title}</h2>
+      <ul>
+        {people.map((person) => (
+          <li key={person.id}>
+            <img src={getImageUrl(person)} alt={person.name} />
+            <p>
+              <b>{person.name}:</b>
+              {" " + person.profession + " "}
+              known for {person.accomplishment}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+export default function List() {
+  return (
+    <article>
+      <h1>Scientists</h1>
+      <ListSection title="Chemists" people={chemistList} />
+      <ListSection title="Everyone Else" people={notChemistList} />
+    </article>
+  );
+}
+
+// 2. Nested lists in one component
+import { recipes } from './data.js';
+
+export default function RecipeList() {
+  const recipeList = recipes.map(recipe =>
+       <div key={recipe.id}>
+          <h2>{recipe.name}</h2>
+          <ul>
+            {recipe.ingredients.map(ingredient =>
+              <li key={ingredient}>
+                {ingredient}
+              </li>
+            )}
+          </ul>
+        </div>)
+
+  return (
+    <div>
+      <h1>Recipes</h1>
+      <ul>
+      { recipeList }
+      </ul>
+    </div>
+  );
+}
+
+// 3. Extracting a list item component
+import { recipes } from './data.js';
+
+export function Recipe({name, ingredients}){
+  return (
+        <div>
+          <h2>{name}</h2>
+          <ul>
+            {ingredients.map(ingredient =>
+              <li key={ingredient}>
+                {ingredient}
+              </li>
+            )}
+          </ul>
+        </div>
+  );
+}
+export default function RecipeList() {
+  return (
+    <div>
+      <h1>Recipes</h1>
+      {recipes.map(recipe =>
+      <Recipe
+        key={recipe.id}
+        {...recipe}
+        />
+      )}
+    </div>
+  );
+}
+
+// 4. List with a separator
+const poem = {
+  lines: [
+    'I write, erase, rewrite',
+    'Erase again, and then',
+    'A poppy blooms.'
+  ]
+};
+
+export default function Poem() {
+  return (
+    <article>
+      {poem.lines.map((line, index) =>
+       {
+         return (
+          <>
+            { index > 0 && <hr/>}
+            <p key={index}>
+              {line}
+            </p>
+          </>
+          )
+        }
+      )}
+    </article>
+  );
+}
+
+```
+
+## 8. Keeping components pure
+
+- How to avoid confusing bugs by keeping components pure
+- 컴포넌트를 순수하게 유지해 버그를 피하는 방법
+
+### 순수함수
+
+- It minds its own business. It does not change any objects or variables that existed before it was called. 외부 값을 변경시키지 않는 함수
+- Same inputs, same output. Given the same inputs, a pure function should always return the same result. 같은 값을 입력하면 항상 같은 출력이 나오는 함수
+
+- React는 순수함수 개념을 중심으로 설계되었습니다. React는 모든 컴포넌트가 순수함수라고 가정합니다. 동일한 입력이 주어지면 항상 같은 JSX를 반환해야 함을 의미합니다.
+- React는 개발 중에 각 구성 요소의 기능을 두 번 호출하는 "Strict Mode"를 제공합니다. Strict Mode는 구성 요소 함수를 두 번 호출하여 이러한 규칙을 위반하는 구성 요소를 찾는 데 도움이 됩니다.
+- 루트 컴포넌트를 React.StrictMode로 감싸면 사용할 수 있습니다.
+
+### Local mutation
+
+- 렌더링하는 동안 방금 생성한 변수와 객체를 변경하는 것은 문제가 되지 않습니다.
+- 순수함수는 함수 범위 밖의 변수나 호출 전에 생성된 객체를 변경하지 않습니다.
+
+### Side Effect
+
+- React의 Side Effect는 일반적으로 이벤트 핸들러 내부에 속합니다.
+- 이벤트 핸들러는 렌더링 중에는 실행되지 않습니다. 따라서 이벤트 핸들러는 순수할 필요가 없습니다.
+- useEffect는 렌더링 후 부작용이 허용될 때 나중에 React를 실행하도록 지시합니다.
+
+- 컴포넌트는 서버와 같은 다른 환경에서 실행될 수 있습니다! 동일한 입력에 대해 동일한 결과를 반환하므로 하나의 구성 요소가 많은 사용자 요청을 처리할 수 있습니다.
+- 입력이 변경되지 않은 렌더링 컴포넌트를 건너뛰면 성능을 향상시킬 수 있습니다 . 순수 함수는 항상 동일한 결과를 반환하므로 캐시해도 안전하므로 이는 안전합니다.
+- 딥 컴포넌트 트리를 렌더링하는 도중 일부 데이터가 변경되면 React는 오래된 렌더링을 완료하는 데 시간을 낭비하지 않고 렌더링을 다시 시작할 수 있습니다. Purity는 언제든지 계산을 중단해도 안전합니다.
+
+#### Challenge
+
+```js
+// 1. clock
+export default function Clock({ time }) {
+  let hours = time.getHours();
+  let className = ''
+  if (hours >= 0 && hours <= 6) {
+    className = 'night';
+  } else {
+   className = 'day';
+  }
+  return (
+    <h1 className={className}>
+      {time.toLocaleTimeString()}
+    </h1>
+  );
+}
+
+// 2.broken  profile
+import Panel from './Panel.js';
+import { getImageUrl } from './utils.js';
+
+
+export default function Profile({ person }) {
+
+  return (
+    <Panel>
+      <Header person={person} />
+      <Avatar person={person} />
+    </Panel>
+  )
+}
+
+function Header({person}) {
+  return <h1>{person.name}</h1>;
+}
+
+function Avatar({person}) {
+  return (
+    <img
+      className="avatar"
+      src={getImageUrl(person)}
+      alt={person.name}
+      width={50}
+      height={50}
+    />
+  );
+}
+
+// 3. broken story tray
+export default function StoryTray({ stories }) {
+  const storyList = [...stories, {
+    id: 'create',
+    label: 'Create Story'
+  }]
+
+  return (
+    <ul>
+      {storyList.map(story => (
+        <li key={story.id}>
+          {story.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+
+```
+
+## 9. Your UI as a tree
+
+- Why understanding your UI as trees is useful
+- UI를 트리로 이해해보자
+
+- 트리는 엔터티 간의 관계를 나타내는 일반적인 방법입니다. UI를 모델링하는 데 자주 사용됩니다.
+- 렌더링 트리 - React 렌더트리의 루트노드는 앱의 루트 컴포넌트입니다.
+- 모듈 종속성 트리 - 번들러(클라이언트를 제공하는데 필요한 모든 JS를 번들로 묶는 빌드 단계에서, 번들러는 종속성 트리를 사용해 어떤 모듈을 포함해야 하는지 결정함.)`
+- 종속성 트리는 페인팅 시간을 늦추고 번들로 묶인 코드를 최적화할 수 있는 기회를 제공하는 대규모 번들 크기를 디버깅하는 데 유용합니다.
 
 </MainLayout>

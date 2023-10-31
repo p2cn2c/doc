@@ -9,7 +9,7 @@ import * as CONFIG from '../config';
 import '../styles/main.scss';
 
 const { content = {} } = Astro.props;
-const currentPage = new URL(Astro.request.url).pathname;
+const currentPage = `${new URL(Astro.request.url).pathname}/${CONFIG.DEFAULT_URL}`;
 // const currentFile = `src/pages${currentPage.replace(/\/$/, '')}.md`;
 ---
 
