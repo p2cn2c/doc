@@ -58,4 +58,19 @@
     padding: 1rem;
     border-radius: 0.44rem;
   }
+
+  li {
+    list-style: circle;
+  }
+
+  blockquote {
+    background-color: white;
+    padding: 0.1rem 1rem 0.8rem;
+    border-radius: 0.44rem;
+    margin: 0.5rem;
+
+    p {
+      color: black;
+    }
+  }
 }
