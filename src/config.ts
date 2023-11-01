@@ -3,7 +3,7 @@ export const SITE = {
   description: "whewchews wiki",
   defaultLanguage: "ko_KR",
   twitter: "",
-  github: "p2cn2c",
+  github: "whewchews",
   linkedin: "",
 };
 
