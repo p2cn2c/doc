@@ -21,6 +21,10 @@ export const SIDEBAR = [
   { text: "React.dev", header: true },
   { text: "Introduction", link: `${DEFAULT_URL}/react/introduction` },
   { text: "Describing the UI", link: `${DEFAULT_URL}/react/describing-the-ui` },
+  {
+    text: "Adding Interactivity",
+    link: `${DEFAULT_URL}/react/adding-interactivity`,
+  },
 
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },
