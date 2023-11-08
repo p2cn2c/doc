@@ -2,7 +2,7 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import ReactSample from "../../components/ReactSample.jsx";
 
 <MainLayout>
-# CH1. Adding Interactivity
+# CH2. Adding Interactivity
 `Some things on the screen update in response to user input.
  For example, clicking an image gallery switches the active image.
   In React, data that changes over time is called state. 
@@ -22,7 +22,7 @@ import ReactSample from "../../components/ReactSample.jsx";
 > Different ways to write an event handler<br/>
 > How to pass event handling logic from a parent component<br/>
 > How events propagate and how to stop them<br/>
-> 이벤트 핸들러를 처리하는 여러가지 방법<br>
+> 이벤트 핸들러를 처리하는 여러가지 방법<br/>
 > 부모 컴포넌트에서 이벤트 처리 로직을 전달하는 방법<br/>
 > 이벤트 전파와 방지 방법
 
@@ -115,10 +115,578 @@ export default function ColorSwitch({
     </button>
   );
 }
+```
 
 ## 2. State: A Components's Memory
--
 
+- 컴포넌트는 상호작용의 결과로 화면의 내용을 변경해야 하는 경우가 많다.
+- 현재 입력값, 현재 이미지, 장바구니 등을 "기억"해야 한다. 이러한 종류의 컴포넌트별 메모리를 state라고 한다.
+
+### 일반 변수로는 충분하지 않은 경우
+
+- 지역 변수는 렌더링 사이에 유지되지 않는다. 컴포넌트를 두번째로 렌더링할 때 처음부터 렌더링한다. 즉, 지역변수에 대한 변경 사항을 고려하지 않는다.
+- 지역변수를 변경해도 렌더링이 트리거 되지않는다. 리엑트는 새 데이터로 컴포넌트를 다시 렌더링해야 한다는 것을 인식하지 못한다.
+  <br />
+
+새 데이터로 컴포넌트를 업데이트 하려면
+
+- 렌더링 사이에 데이터를 유지한다
+- 리액트를 트리거하여 새 데이터로 컴포넌트를 리랜더링한다
+
+#### useState Hook
+
+- 렌더링 사이에 데이터를 유지하는 state 변수이다
+- 변수를 업데이트 하고 이랙트를 트리거하여 컴포넌트를 다시 렌더링하는 상태 설정 함수(state setter function)이다.
+
+### 상태변수 추가
+
+- `import { useState } from "react"`;
+
+- const [index, setIndex] = useState(0);
+
+- index: 상태 변수
+- setIndex: setter 함수
+- useState 괄호 안: 초기값
+
+### 첫번째 Hook
+
+- react는 use로 시작하는 hook을 호출한다
+- hooks는 리액트가 렌더링되는 동안에만 사용할 수 있는 특수한 기능이다
+- hook을 통해 다양한 리액트의 기능에 연결할 수 있다
+- hook은 컴포넌트의 최상위 수준이나 자체 hook에서만 호출할 수 있다.(파일 상단에서 모듈을 가져오는 방법과 유사하게 컴포넌트 상단에서 사용함)
+
+### 컴포넌트에 여러 상태 변수 제공
+
+- 하나의 컴포넌트에 원하는 만큼 많은 useState 변수를 가질 수 있다
+- 그러나 두 개의 상태 변수를 함께 변경하는 경우가 많다면 하나로 결합하는 게 더 쉬울 수 있다
+
+### React는 어떤 상태를 반환할 지 어떻게 알 수 있나요 ?
+
+- 동일한 컴포넌트를 렌더링 할 때마다 안정적인 호출 순서를 사용한다
+- hoos는 항상 동일한 순서로 호출된다
+- 내부적으로 리액트는 모든 구성요소에 대한 상태 페어 배열을 보유한다. 또한 렌더링 전에 설정된 현재 페어의 인덱스를 유지한다.
+- 호출할 때마다 리액트는 다음 상태 페어를 제공하고 인덱스를 증가시킨다.
+
+### State는 고립되어있고 private이다.
+
+- state는 화면의 컴포넌트 instance 에 대해 local이다
+- 즉, 동일한 컴포넌트를 두 번 렌더링하면 각 복사본은 완전히 격리된 상태가 된다.
+- 둘 중 하나를 변경해도 다른 하나에는 영향을 미치지 않는다.
+
+#### Challenge
+
+```js
+// 1. 갤러리
+export default function Gallery() {
+  const [index, setIndex] = useState(0);
+  const [showMore, setShowMore] = useState(false);
+
+  // hasPrev, hasNext 비활성화 조건 추가
+  let hasPrev = index > 0;
+  let hasNext = index < sculptureList.length - 1;
+
+  function handlePrevClick() {
+    if (hasPrev) {
+      setIndex(index - 1);
+    }
+  }
+
+  function handleNextClick() {
+    if (hasNext) {
+      setIndex(index + 1);
+    }
+  }
+
+  function handleMoreClick() {
+    setShowMore(!showMore);
+  }
+
+  let sculpture = sculptureList[index];
+  return (
+    <>
+      <button onClick={handlePrevClick} disabled={!hasPrev}>
+        Previous
+      </button>
+      <button onClick={handleNextClick} disabled={!hasNext}>
+        Next
+      </button>
+      <h2>
+        <i>{sculpture.name} </i>
+        by {sculpture.artist}
+      </h2>
+      <h3>
+        ({index + 1} of {sculptureList.length})
+      </h3>
+      <button onClick={handleMoreClick}>
+        {showMore ? "Hide" : "Show"} details
+      </button>
+      {showMore && <p>{sculpture.description}</p>}
+      <img src={sculpture.url} alt={sculpture.alt} />
+    </>
+  );
+}
+```
+
+```js
+// 2. form
+import { useState } from "react";
+export default function Form() {
+  // 변수 설정방법을 useState로 변경
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+
+  function handleFirstNameChange(e) {
+    setFirstName(e.target.value);
+  }
+
+  function handleLastNameChange(e) {
+    setLastName(e.target.value);
+  }
+
+  function handleReset() {
+    setFirstName('');
+    setLastName('');
+  }
+
+```
+
+```js
+// hook은 최상단에서 호출
+import { useState } from "react";
+export default function FeedbackForm() {
+  const [isSent, setIsSent] = useState(false);
+  const [message, setMessage] = useState("");
+  if (isSent) {
+    return <h1>Thank you!</h1>;
+  } else {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          alert(`Sending: "${message}"`);
+          setIsSent(true);
+        }}
+      >
+        <textarea
+          placeholder="Message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <br />
+        <button type="submit">Send</button>
+      </form>
+    );
+  }
+}
+```
+
+```js
+// 불필요한 상태 변수를 일반 변수로 전환
+// 상태 변수는 구성 요소를 다시 렌더링하는 사이에 정보를 유지하는 데만 필요하다. 단일 이벤트 핸들러 내에서는 일반 변수가 제대로 작동한다. 일반 변수가 잘 작동하는 경우 상태 변수를 도입할 필요가 없다.
+export default function FeedbackForm() {
+  function handleClick() {
+    const name = prompt("What is your name?");
+    alert(`Hello, ${name}!`);
+  }
+
+  return <button onClick={handleClick}>Greet</button>;
+}
+```
+
+## 3. Render and Commit
+
+UI를 요청하고 제공하는 3단계 프로세스
+
+1. 렌더링 트리거
+2. 컴포넌트 렌더링
+3. DOM에 커밋
+
+### 1. 랜더링 트리거 조건
+
+1. 컴포넌트의 초기 렌더링 - createRoot
+2. 컴포넌트(또는 상위 항목 중 하나)의 상태 업데이트 - setState
+
+### 2. 컴포넌트 렌더링
+
+- 렌더링을 트리거한 후 리액트는 컴포넌트를 호출하여 화면에 표시할 내용을 파악한다
+- 렌더링: 리액트가 컴포넌트를 호출하는 것
+- 초기 렌더링 시 리액트는 루트 컴포넌트를 호출한다
+- 후속 렌더링의 경우, 리액트는 상태 업데이트가 렌더링을 트리거한 함수 컴포넌트를 호출한다
+  => 이 프로세스는 재귀적이다. 업데이트된 컴포넌트가 다른 컴포넌트를 반환하면 리액트는 해당 컴포넌트를 다음에 렌더링한다.
+  => 더이상 중첩된 컴포넌트가 없고 리액트가 화면에 표시해야할 내용을 정확히 알 때까지 프로세스가 계속된다.
+
+### 3. DOM에 변경사항 커밋
+
+- 컴포넌트를 렌더링한 후 리액트는 DOM을 수정한다
+- 초기 렌더링의 경우 React는 appendChild() DOM API를 사용하여 생성된 모든 DOM 노드를 화면에 배치한다.
+- 재렌더링의 경우 React는 DOM이 최신 렌더링 출력과 일치하도록 최소한의 필수 작업(렌더링 중에 계산됨!)을 적용한다.
+- 렌더링 사이에 차이가 생기는 경우에만 DOM 노드를 변경한다.
+
+### 4. 브라우저 페인트
+
+- 렌더링이 완료되고 리액트가 DOM을 업데이트 한 후 브라우저는 화면을 다시 칠한다. (브라우저 렌더링)
+
+## 4. State as a Snapshot
+
+- 상태는 읽고 쓸 수 있는 일반 JS 변수처럼 보일 수 있다. 그러나 상태는 스냅샷 처럼 동작한다. 이미 가지고 있는 상태변수가 변경되지 않고 다시 렌더링이 트리거된다.
+
+- 이벤트 핸들러의 코드가 비동기적이더라도 상태 변수의 값은 렌더링 내에서 절대 변경되지 않는다
+
+- 상태를 설정하면 새로운 렌더링이 요청된다.
+- React는 마치 선반에 있는 것처럼 구성 요소 외부에 상태를 저장한다.
+- useState를 호출하면 React는 해당 렌더링 상태의 스냅샷을 제공한다 .
+- 변수와 이벤트 핸들러는 다시 렌더링해도 생존하지 않는다. 모든 렌더링에는 자체 이벤트 핸들러가 있다.
+- 모든 렌더(및 그 내부의 함수)는 항상 React가 해당 렌더에 제공한 상태의 스냅샷을 확인한다 .
+- 렌더링된 JSX에 대해 생각하는 방식과 유사하게 이벤트 핸들러에서 상태를 정신적으로 대체할 수 있다.
+- 과거에 생성된 이벤트 핸들러는 생성된 렌더링의 상태 값을 갖는다.
+
+#### Challenge
+
+```js
+import { useState } from "react";
+export default function TrafficLight() {
+  const [walk, setWalk] = useState(true);
+
+  function handleClick() {
+    setWalk(!walk);
+    alert(walk ? "Stop is next" : "Walk is next");
+  }
+
+  return (
+    <>
+      <button onClick={handleClick}>Change to {walk ? "Stop" : "Walk"}</button>
+      <h1
+        style={{
+          color: walk ? "darkgreen" : "darkred",
+        }}
+      >
+        {walk ? "Walk" : "Stop"}
+      </h1>
+    </>
+  );
+}
+```
+
+## 5. Queueing a Series of State Updates
+
+- setState를 하면 다른 렌더링이 대기열에 추가된다. 기존 렌더링의 변수를 변경하지 않지만 새 렌더링을 요청한다.
+
+하지만 때로는 다음 렌더링을 대기열에 넣기 전에 값에 대해 여러 작업을 수행해야 할 수도 있다.
+
+### 리액트 배치 상태 업데이트
+
+- 리액트는 상태 업데이트를 처리하기 전에 이벤트 핸들러의 모든 코드가 실행될 때까지 기다린다. => 모든 호출 이후에 리렌더링이 발생함(일괄처리)
+- 클릭과 같은 여러 의도적인 이벤트는 일괄 처리하지 않는다.
+
+### 다음 렌더링 전에 동일한 상태를 여러번 업데이트
+
+- 다음 상태값을 전달하는 대신 이전 상태를 기반으로 다음 상태를 계산하는 함수를 전달한다.
+- setNumber(number+1) => setNumber(n => n+1)
+
+#### 업데이터 기능
+
+1. 리액트는 이벤트 핸들러의 다른 모든 코드가 실행된 후에 이 함수가 처리되도록 대기열에 넣는다.
+2. 다음 렌더링 하는 동안 리액트는 대기열을 거쳐서 최종 업데이트된 상태를 제공한다.
+
+#### Challenge
+
+```js
+// 1. 요청 카운터 수정
+export default function RequestTracker() {
+  async function handleClick() {
+    // setPending((p) => p + 1);
+    // setPending((p) => p - 1);
+    // setCompleted((c) => c + 1);
+  }
+
+  return (
+    <>
+      <h3>Pending: {pending}</h3>
+      <h3>Completed: {completed}</h3>
+      <button onClick={handleClick}>Buy</button>
+    </>
+  );
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+```js
+// 2. process queue
+import { useState } from "react";
+export function getFinalState(baseState, queue) {
+  let finalState = baseState;
+
+  for (let update of queue) {
+    if (typeof update === "function") {
+      finalState = update(finalState);
+    } else {
+      finalState = update;
+    }
+  }
+
+  return finalState;
+}
+```
+
+## 6. Updating Objects in State
+
+- state는 객체를 포함한 모든 종류의 JavaScript 값을 보유할 수 있다. <br/>
+  하지만 React 상태에 있는 객체를 직접 변경해서는 안된다.<br/>
+  대신, 객체를 업데이트하려면 새 객체를 생성하거나 기존 객체의 복사본을 만든 다음 해당 복사본을 사용하도록 상태를 설정해야 한다<br/>
+
+### mutation
+
+- number, string, boolean => 불변값. 읽기전용. 값을 데체하기 위해 다시 렌더링을 트리거 할 수 있음
+- 객체 state 는 기술적으로는 변경이 가능하지만 변경불가능한 것처럼 처리해야 한다. 변경하는 대신 항상 교체해야 한다.
+
+### state를 읽기전용으로 처리
+
+- 상태에 넣은 모든 JS객체를 읽기전용으로 처리해야 한다. 새 개체를 만들어서 넣어준다.
+
+### spread 구문을 사용해 객체 복사
+
+- 일부 데이터는 기존 데이터를 포함하려고 하는 경우가 많은데 이 경우 스프레드 구문을 사용한다.
+- 1 depth만 복사한다. 속도가 빨라지지만 중첩된 속성을 업데이트 하려면 deep copy를 하거나 해당 속성을 두번 이상 사용해야 한다.
+
+```js
+setPerson({
+  ...person, // Copy the old fields
+  firstName: e.target.value, // But override this one
+});
+```
+
+- 중첩된 객체를 업데이트 하려면 업데이트 하는 위치부터 복사본을 만들어야 한다.
+- 반복되는 코드복사를 줄이려면 Immer를 사용하면 좋다.
+
+#### Challenge
+
+```js
+// 1. 잘못된 상태 업데이트 수정
+import { useState } from "react";
+
+export default function Scoreboard() {
+  const [player, setPlayer] = useState({
+    firstName: "Ranjani",
+    lastName: "Shettar",
+    score: 10,
+  });
+
+  function handlePlusClick() {
+    setPlayer({
+      ...player,
+      score: player.score + 1,
+    });
+  }
+
+  function handleFirstNameChange(e) {
+    setPlayer({
+      ...player,
+      firstName: e.target.value,
+    });
+  }
+
+  function handleLastNameChange(e) {
+    setPlayer({
+      ...player,
+      lastName: e.target.value,
+    });
+  }
+
+  return (
+    <>
+      <label>
+        Score: <b>{player.score}</b>{" "}
+        <button onClick={handlePlusClick}>+1</button>
+      </label>
+      <label>
+        First name:
+        <input value={player.firstName} onChange={handleFirstNameChange} />
+      </label>
+      <label>
+        Last name:
+        <input value={player.lastName} onChange={handleLastNameChange} />
+      </label>
+    </>
+  );
+}
+```
+
+```js
+// 2. mutation
+import { useState } from "react";
+import Background from "./Background.js";
+import Box from "./Box.js";
+
+const initialPosition = {
+  x: 0,
+  y: 0,
+};
+
+export default function Canvas() {
+  const [shape, setShape] = useState({
+    color: "orange",
+    position: initialPosition,
+  });
+
+  function handleMove(dx, dy) {
+    setShape({
+      ...shape,
+      position: {
+        x: shape.position.x + dx,
+        y: shape.position.y + dy,
+      },
+    });
+  }
+
+  function handleColorChange(e) {
+    setShape({
+      ...shape,
+      color: e.target.value,
+    });
+  }
+
+  return (
+    <>
+      <select value={shape.color} onChange={handleColorChange}>
+        <option value="orange">orange</option>
+        <option value="lightpink">lightpink</option>
+        <option value="aliceblue">aliceblue</option>
+      </select>
+      <Background position={initialPosition} />
+      <Box color={shape.color} position={shape.position} onMove={handleMove}>
+        Drag me!
+      </Box>
+    </>
+  );
+}
+```
+
+```js
+// 3. immer
+const [shape, setShape] = useImmer({
+  color: "orange",
+  position: initialPosition,
+});
+
+function handleMove(dx, dy) {
+  updateShape((draft) => {
+    draft.position.x += dx;
+    draft.position.y += dy;
+  });
+}
+```
+
+## 7. Updating Arrays in State
+
+- 배열은 state에 저장할 때는 immutable로 처리해야 한다.
+- 객체와 마찬가지로 state에 저장한 배열을 업데이트 하면 새 배열을 생성(또는 기존 배열의 복사본 만들기)를 한 다음에 새 배열을 사용하도록 설정해야 한다.
+
+- avoid(mutations the array): push, unshift, pop, shift, splice, arr[i], reverse, sort
+- prefer(returns a new array): concat, [...arr], filter, slice, map
+
+- void인 메서드를 쓸 때는 배열을 복사하고 새 배열을 만들어서 사용한다.
+- 중첩된 상태를 업데이트할 때 업데이트하려는 지점부터 최상위 수준까지 복사본을 만들어야 한다.
+- immer를 사용해 코드를 간결하게 유지할 수 있다.
+
+```js
+// 1. 장바구니 항목 업데이트
+ function handleIncreaseClick(productId) {
+     setProducts(products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          count: product.count + 1
+        };
+      } else {
+        return product;
+      }
+  }
+ }
+```
+
+```js
+// 2. 장바구니 항목 제거
+function handleDecreaseClick(productId) {
+  let nextProducts = products.map((product) => {
+    if (product.id === productId) {
+      return {
+        ...product,
+        count: product.count - 1,
+      };
+    } else {
+      return product;
+    }
+  });
+
+  // 0인 항목 제거
+  nextProducts = nextProducts.filter((p) => p.count > 0);
+  setProducts(nextProducts);
+}
+```
+
+```js
+// 3. Fix the mutations using non-mutative methods
+function handleAddTodo(title) {
+  setTodos([
+    ...todos,
+    {
+      id: nextId++,
+      title: title,
+      done: false,
+    },
+  ]);
+}
+
+function handleChangeTodo(nextTodo) {
+  setTodos(
+    todos.map((t) => {
+      if (t.id === nextTodo.id) {
+        return nextTodo;
+      } else {
+        return t;
+      }
+    })
+  );
+}
+
+function handleDeleteTodo(todoId) {
+  setTodos(todos.filter((t) => t.id !== todoId));
+}
+```
+
+```js
+// 4. immer 사용
+const [todos, updateTodos] = useImmer(initialTodos);
+
+function handleAddTodo(title) {
+  updateTodos((draft) => {
+    draft.push({
+      id: nextId++,
+      title: title,
+      done: false,
+    });
+  });
+}
+
+function handleChangeTodo(nextTodo) {
+  updateTodos((draft) => {
+    const todo = draft.find((t) => t.id === nextTodo.id);
+    todo.title = nextTodo.title;
+    todo.done = nextTodo.done;
+  });
+}
+
+function handleDeleteTodo(todoId) {
+  updateTodos((draft) => {
+    const index = draft.findIndex((t) => t.id === todoId);
+    draft.splice(index, 1);
+  });
+}
 ```
 
 </MainLayout>
