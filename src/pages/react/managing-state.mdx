@@ -1,0 +1,182 @@
+import MainLayout from "../../layouts/MainLayout.astro";
+import ReactSample from "../../components/ReactSample.jsx";
+
+<MainLayout>
+# CH3. Managing State
+`
+As your application grows, it helps to be more intentional about how your state is organized and how the data flows between your components. Redundant or duplicate state is a common source of bugs. 
+`
+
+## 1. Reacting to Input with State
+
+### 선언형 UI vs 명령형 UI
+
+- 명령형 프로그램은 각 요소에 명령을 내려 컴퓨터에 UI 업데이트 방법을 알려준다.
+- 이는 복잡한 시스템에서 관리하기가 어려워진다.
+- 리액트는 이 문제를 해결하기 위해 만들어졌다.
+- 리액트에서는 UI를 직접 조작하지 않는다. 보여주고 싶은 것을 선언하면 리액트는 UI를 업데이트 한다.
+
+### UI를 선언적으로 생각하기
+
+- 구성요소의 다양한 시각적 상태를 식별(empty, tying, submitting, success, error)
+- 상태 변경을 촉발하는 요인 결정(Human inputs, Computer inputs)
+- useState를 사용해 메모리의 상태를 표현
+- 필수적이지 않은 상태 변수를 제거
+- 이벤트 핸들러를 연결하여 상태 설정
+
+#### Challenge
+
+```js
+// 1.
+export default function Picture() {
+  const [isActive, setIsActive] = useState(false);
+
+  let backgroundClassName = 'background';
+  let pictureClassName = 'picture';
+  if (isActive) {
+    pictureClassName += ' picture--active';
+  } else {
+    backgroundClassName += ' background--active';
+  }
+
+  return (
+    <div
+      className={backgroundClassName}
+      onClick={() => setIsActive(false)}
+    >
+      <img
+        onClick={e => {
+          e.stopPropagation();
+          setIsActive(true);
+        }}
+        className={pictureClassName}
+        alt="Rainbow houses in Kampung Pelangi, Indonesia"
+        src="https://i.imgur.com/5qwVYb1.jpeg"
+      />
+    </div>
+  );
+}
+
+
+// 2.
+export default function EditProfile() {
+  const [isEditing, setIsEditing] = useState(false);
+  const [firstName, setFirstName] = useState('Jane');
+  const [lastName, setLastName] = useState('Jacobs');
+
+  return (
+    <form onSubmit={e => {
+      e.preventDefault();
+      setIsEditing(!isEditing);
+    }}>
+      <label>
+        First name:{' '}
+        {isEditing ? (
+          <input
+            value={firstName}
+            onChange={e => {
+              setFirstName(e.target.value)
+            }}
+          />
+        ) : (
+          <b>{firstName}</b>
+        )}
+      </label>
+      <label>
+        Last name:{' '}
+        {isEditing ? (
+          <input
+            value={lastName}
+            onChange={e => {
+              setLastName(e.target.value)
+            }}
+          />
+        ) : (
+          <b>{lastName}</b>
+        )}
+      </label>
+      <button type="submit">
+        {isEditing ? 'Save' : 'Edit'} Profile
+      </button>
+      <p><i>Hello, {firstName} {lastName}!</i></p>
+    </form>
+  );
+}
+// 3.
+function updateDOM() {
+  if (isEditing) {
+    editButton.textContent = 'Save Profile';
+    hide(firstNameText);
+    hide(lastNameText);
+    show(firstNameInput);
+    show(lastNameInput);
+  } else {
+    editButton.textContent = 'Edit Profile';
+    hide(firstNameInput);
+    hide(lastNameInput);
+    show(firstNameText);
+    show(lastNameText);
+  }
+  firstNameText.textContent = firstName;
+  lastNameText.textContent = lastName;
+  helloText.textContent = (
+    'Hello ' +
+    firstName + ' ' +
+    lastName + '!'
+  );
+}
+
+
+```
+
+## 2. Choosing the State Structure
+
+-
+
+#### Challenge
+
+```js
+
+```
+
+## 3. Sharing State Between Components
+
+#### Challenge
+
+```js
+
+```
+
+## 4. Preserving and Resetting State
+
+#### Challenge
+
+```js
+
+```
+
+## 5. Extracting State Logic into a Reducer
+
+#### Challenge
+
+```js
+
+```
+
+## 6. Passing Data Deeply with Context
+
+#### Challenge
+
+```js
+
+```
+
+## 7. Scaling Up with Reducer and Context
+
+#### Challenge
+
+```js
+
+```
+
+</MainLayout>

@@ -25,7 +25,10 @@ export const SIDEBAR = [
     text: "Adding Interactivity",
     link: `${DEFAULT_URL}/react/adding-interactivity`,
   },
-
+  {
+    text: "Managing State",
+    link: `${DEFAULT_URL}/react/managing-state`,
+  },
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },
   // { text: "Colors", link: `${DEFAULT_URL}/core/colors` },
