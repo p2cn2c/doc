@@ -131,52 +131,545 @@ function updateDOM() {
 
 ## 2. Choosing the State Structure
 
--
+### state 구조화 원칙
+
+- 목표: 상태를 실수 없이, 쉽게 업데이트 할 수 있도록 하는 것
+
+- 그룹 관련 상태: 항상 두 개 이상의 state 변수를 동시에 업데이트 하는 경우, 단일 state 변수로 병합 고려
+- state 모순 피하기: 여러 상태가 서로 모순되는 방식으로 구성되면 실수 여지가 있음
+- 중복 상태 피하기: 렌더링 하는 동안 컴포넌트의 props나 기존 state에서 계것할 수 있는 경우 해당 정보를 state에 넣지 않아야 함
+- 깊게 중첩된 상태 피하기: 업데이트하기가 편리하지 않으므로 평평한 방식으로 구조화 선호
 
 #### Challenge
 
 ```js
+// 1. props.color로 state init 제거. 값 바로 사용.
+export default function Clock(props) {
+  return (
+    <h1 style={{ color: props.color }}>
+      {props.time}
+    </h1>
+  );
+}
 
+// 2. 계산해서 사용할 수 있는 중복요소 제거
+export default function TravelPlan() {
+  const [items, setItems] = useState(initialItems);
+  const total = items.length;
+  const packed = items
+    .filter(item => item.packed)
+    .length;
+
+  function handleAddItem(title) {
+    setTotal(total + 1);
+    setItems([
+      ...items,
+      {
+        id: nextId++,
+        title: title,
+        packed: false
+      }
+    ]);
+  }
+
+  function handleChangeItem(nextItem) {
+    setItems(items.map(item => {
+      if (item.id === nextItem.id) {
+        return nextItem;
+      } else {
+        return item;
+      }
+    }));
+  }
+
+  function handleDeleteItem(itemId) {
+    setItems(
+      items.filter(item => item.id !== itemId)
+    );
+  }
+
+  return (
+    <>
+      <AddItem
+        onAddItem={handleAddItem}
+      />
+      <PackingList
+        items={items}
+        onChangeItem={handleChangeItem}
+        onDeleteItem={handleDeleteItem}
+      />
+      <hr />
+      <b>{packed} out of {total} packed!</b>
+    </>
+  );
+}
+
+// 3. 중복 상태 태거
+  const [letters, setLetters] = useState(initialLetters);
+  const [highlightedId, setHighlightedId ] = useState(null);
+
+  function handleHover(letterId) {
+    setHighlightedId(letterId);
+  }
+
+
+// 4. 셀렉트 -> 멀티셀렉트 배열 or Set으로 변경
+
+export default function MailClient() {
+  const [selectedIds, setSelectedIds] = useState(
+    new Set()
+  );
+
+  const selectedCount = selectedIds.size;
+
+  function handleToggle(toggledId) {
+    // Create a copy (to avoid mutation).
+    const nextIds = new Set(selectedIds);
+    if (nextIds.has(toggledId)) {
+      nextIds.delete(toggledId);
+    } else {
+      nextIds.add(toggledId);
+    }
+    setSelectedIds(nextIds);
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isSelected={
+              selectedIds.has(letter.id)
+            }
+            onToggle={handleToggle}
+          />
+        ))}
+        <hr />
+        <p>
+          <b>
+            You selected {selectedCount} letters
+          </b>
+        </p>
+      </ul>
+    </>
+  );
+}
 ```
 
 ## 3. Sharing State Between Components
 
+- 상태 올리기(lifting state up): 가장 가까운 공통 상위 항목으로 state를 옮긴 다음 props를 통해 상태를 전달하는 방식
+
+1. 하위 구성 요소에서 상태를 제거 .
+2. 공통 상위로부터 하드코딩된 데이터를 전달 .
+3. 공통 상위 항목에 상태를 추가하고 이를 이벤트 핸들러와 함께 전달.
+
+- 제어 컴포넌트(controlled component): 컴포넌트가 props에 의해 구동(driven by props)
+- 비제어 컴포넌트(uncontrolled component): 컴포넌트가 state에 의해 구동(driven by state)
+
 #### Challenge
 
 ```js
+// 1. sync input
+export default function SyncedInputs() {
+  const [text, setText] = useState('');
+
+  function handleChange(e) {
+    setText(e.target.value);
+  }
+
+  return (
+    <>
+      <Input
+        label="First input"
+        value={text}
+        onChange={handleChange}
+      />
+      <Input
+        label="Second input"
+        value={text}
+        onChange={handleChange}
+      />
+    </>
+  );
+}
+
+function Input({ label, value, onChange }) {
+  return (
+    <label>
+      {label}
+      {' '}
+      <input
+        value={value}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
+
+// 2. filter list
+export default function FilterableList() {
+  const [query, setQuery] = useState('');
+  const results = filterItems(foods, query);
+
+  function handleChange(e) {
+    setQuery(e.target.value);
+  }
+
+  return (
+    <>
+      <SearchBar
+        query={query}
+        onChange={handleChange}
+      />
+      <hr />
+      <List items={results} />
+    </>
+  );
+}
+
+function SearchBar({ query, onChange }) {
+  return (
+    <label>
+      Search:{' '}
+      <input
+        value={query}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
+
+function List({ items }) {
+  return (
+    <table>
+      <tbody>
+        {items.map(food => (
+          <tr key={food.id}>
+            <td>{food.name}</td>
+            <td>{food.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 
 ```
 
 ## 4. Preserving and Resetting State
 
+- 상태는 컴포넌트 사이에 격리된다.
+- 리액트는 UI 트리에서의 위치에 따라 어떤 상태가 어떤 컴포넌트에 속하는지 추적한다.
+- 상태는 JSX 태그에 보관되지 않는다. JSX를 배치한 트리 위치와 연결된다.
+- 상태를 보존할 시기와 리렌더링 사이에 재설정할 시기를 제어할 수 있다.
+- 다른 키를 제공하여 하위 트리의 상태를 강제로 재설정할 수 있다.
+- 컴포넌트의 정의를 중첩않아야 한다. 그렇지 않으면 실수로 상태가 재설정된다.
+
+### 상태를 전환할 때 상태를 재설정 하는 방법
+
+1. 다양한 위치에서 구성요소 렌더링
+2. key를 사용하여 각 구성 요소에 명시적인 ID를 부여합니다.
+
+- 키는 전역적으로 고유하지 않음. 부모 내의 위치만 지정.
+
 #### Challenge
 
 ```js
+// 1.  컴포넌트 전체가 아닌 리랜더링할 일부만 같은 위치에서 조건부렌더링
+export default function App() {
+  const [showHint, setShowHint] = useState(false);
+    return (
+      <div>
+        {showHint &&<p><i>Hint: Your favorite city?</i></p>}
+        <Form />
+        <button onClick={() => {
+          setShowHint(!showHint);
+        }}> { showHint? 'Hide hint': 'Show hint' }</button>
+      </div>
+    );
 
+}
+
+
+// 2. 같은 키값을 줌
+export default function App() {
+  const [reverse, setReverse] = useState(false);
+  let checkbox = (
+    <label>
+      <input
+        type="checkbox"
+        checked={reverse}
+        onChange={e => setReverse(e.target.checked)}
+      />
+      Reverse order
+    </label>
+  );
+  if (reverse) {
+    return (
+      <>
+        <Field key="lastName" label="Last name" />
+        <Field key="firstName" label="First name" />
+        {checkbox}
+      </>
+    );
+  } else {
+    return (
+      <>
+        <Field key="firstName" label="First name" />
+        <Field key="lastName" label="Last name" />
+        {checkbox}
+      </>
+    );
+  }
+}
+
+// 3. 리랜더링할 키를 줌
+import { useState } from 'react';
+import ContactList from './ContactList.js';
+import EditContact from './EditContact.js';
+
+export default function ContactManager() {
+  const [
+    contacts,
+    setContacts
+  ] = useState(initialContacts);
+  const [
+    selectedId,
+    setSelectedId
+  ] = useState(0);
+  const selectedContact = contacts.find(c =>
+    c.id === selectedId
+  );
+
+  function handleSave(updatedData) {
+    const nextContacts = contacts.map(c => {
+      if (c.id === updatedData.id) {
+        return updatedData;
+      } else {
+        return c;
+      }
+    });
+    setContacts(nextContacts);
+  }
+
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={selectedId}
+        onSelect={id => setSelectedId(id)}
+      />
+      <hr />
+      <EditContact
+        key={selectedId}
+        initialData={selectedContact}
+        onSave={handleSave}
+      />
+    </div>
+  )
+}
+
+
+// 3. 이미지 태그에 key를 줌
+   <img key={image.src} src={image.src} />
+
+// 4. 배열의 인덱스가 아닌 아이템의 인덱스를 key로 사용함
+ <ul>
+        {displayedContacts.map(contact =>
+          <li key={contact.id}>
+            <Contact contact={contact} />
+          </li>
+        )}
+      </ul>
 ```
 
 ## 5. Extracting State Logic into a Reducer
 
+- 여러 이벤트 핸들러에 분산된 상태 업데이트가 많은 컴포넌트는 부담스러울 수 있다.
+- 컴포넌트 외부의 모든 상태 업데이트 논리를 리듀서라고 하는 단일 함수에 통합할 수 있다.
+- 리듀서 함수는 상태( tasks)를 인수로 사용하므로 컴포넌트 외부에서 선언할 수 있다. 이렇게 하면 들여쓰기 수준이 줄어들고 코드를 더 쉽게 읽을 수 있다.
+
+1. 상태 설정에서 작업 전달로 이동한다.
+2. reducer 함수를 작성한다 .
+3. 컴포넌트의 reducer를 사용한다 .
+
+### useState vs useReducer
+
+- 코드 크기: useStae: 미리 작성해야 하는 코드가 적다. / useReducer는 리듀서 함수와 디스패치 액션을 모두 작성해야 한다. 여러 이벤트 핸들러가 유사한 방식으로 상태를 수정한다면 코드를 줄이는데 도움이 된다.
+- 가독성: useState가 복잡해지면 읽기가 어렵다. 이 경우에 업데이트 로직 방법을 useReducer를 사용하면 좋다.
+- 디버깅: usteState에 버그가 있으면 파악이 어려울 수 있다. / useReducer를 사용하면 분기에 콘솔을 찍어 확인할 수 있다.
+- 테스팅: 리듀서는 컴포넌트에 의존하지 않는 순수함수라 별도 테스트가 가능하다.
+
+### 리듀서 잘 작성하기
+
+- 리듀서는 순수해야 한다. 상태 업데이트와 마찬가지로 리듀서는 렌더링 중에 실행된다. mutation 없이 객체와 배열을 업데이트 해야 한다.
+- 각 작업은 데이터에 여러 변경 사항이 발생하더라도 단일 사용자 상호 작용을 설명해야 한다.
+
 #### Challenge
 
 ```js
+// 2.
+<button
+  onClick={() => {
+    alert(`Sending "${message}" to ${contact.email}`);
+    dispatch({
+      type: "edited_message",
+      message: "",
+    });
+  }}
+>
+  Send to {contact.email}
+</button>;
 
+// 3.
+export default function Messenger() {
+  const [state, dispatch] = useReducer(messengerReducer, initialState);
+  const message = state.messages[state.selectedId];
+  const contact = contacts.find((c) => c.id === state.selectedId);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={state.selectedId}
+        dispatch={dispatch}
+      />
+      <Chat
+        key={contact.id}
+        message={message}
+        contact={contact}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+// 4. Reducer 구현
+export function useReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState);
+
+  function dispatch(action) {
+    const nextState = reducer(state, action);
+    setState(nextState);
+  }
+
+  return [state, dispatch];
+}
 ```
 
 ## 6. Passing Data Deeply with Context
 
+- 일반적으로 props를 통해 상위 컴포넌트의 정보를 하위 컴포넌트로 전달한다.<br/>
+- 그러나 props를 전달하는 것은 중간에 있는 많은 컴포넌트를 통해 전달해야 하거나 앱의 많은 구성 요소에 동일한 정보가 필요한 경우 장황하고 불편할 수 있다. <br/>
+- 컨텍스트를 사용하면 부모 컴포넌트는 props를 통해 명시적으로 정보를 전달하지 않고도 하위 트리의 모든 컴포넌트에 일부 정보를 사용할 수 있다.
+
+### props drilling
+
+- 가장 가까운 공통 조상은 데이터가 필요한 컴포넌트에서 멀리 떨어져 있을 수 있으며, 상태를 그 높이로 끌어올리면 "Props Drilling"이라는 상황이 발생할 수 있습니다.
+- props를 전달하지 않고 트리에서 필요한 컴포넌트로 데이터를 "텔레포트"할 수 있는 방법 => React의 Context!
+
+### context 만드는 방법
+
+1. context를 만든다.
+2. 데이터가 필요한 컴포넌트에서 context를 사용한다.
+3. 데이터를 지정하는 컴포넌트에서 context를 제공한다.
+
+### Context
+
+- 컨텍스트를 사용하면 "주변 환경에 적응"하고 렌더링되는 위치 (즉, 어떤 컨텍스트 ) 에 따라 다르게 표시되는 컴포넌트를 작성할 수 있다.
+- 서로 다른 React 컨텍스트는 서로를 재정의하지 않는다. 각 컨텍스트는 다른 컨텍스트와 완전히 분리되어 있다.
+
+### Context 사용시 고려할 점
+
+- props를 전달해 시작해라. props를 사용하면 데이터 흐름을 명시적으로 만들 수 있다.
+- 컴포넌트를 추출하고 JSX에 children을 전달해라.
+- 이 두 가지 접근방식 중 적합한 게 없을 경우 컨텍스트를 고려해라.
+
+### Context 사용사례
+
+- 테마 지정(ex. 다크모드)
+- 현재 계정
+- 라우팅
+- 상태 관리
+
 #### Challenge
 
 ```js
+// 1.
+export default function App() {
+  const [isLarge, setIsLarge] = useState(false);
+  const imageSize = isLarge ? 150 : 100;
+  return (
+    <ImageSizeContext.Provider value={imageSize}>
+      <label>
+        <input
+          type="checkbox"
+          checked={isLarge}
+          onChange={(e) => {
+            setIsLarge(e.target.checked);
+          }}
+        />
+        Use large images
+      </label>
+      <hr />
+      <List />
+    </ImageSizeContext.Provider>
+  );
+}
 
+function List() {
+  const listItems = places.map((place) => (
+    <li key={place.id}>
+      <Place place={place} />
+    </li>
+  ));
+  return <ul>{listItems}</ul>;
+}
+
+function Place({ place }) {
+  return (
+    <>
+      <PlaceImage place={place} />
+      <p>
+        <b>{place.name}</b>
+        {": " + place.description}
+      </p>
+    </>
+  );
+}
+
+function PlaceImage({ place }) {
+  const imageSize = useContext(ImageSizeContext);
+  return (
+    <img
+      src={getImageUrl(place)}
+      alt={place.name}
+      width={imageSize}
+      height={imageSize}
+    />
+  );
+}
 ```
 
 ## 7. Scaling Up with Reducer and Context
 
-#### Challenge
+- 리듀서를 사용하면 컴포넌트의 상태 업데이트 논리를 통합할 수 있다.
+- 컨텍스트를 사용하면 정보를 다른 컴포넌트에 깊이 전달할 수 있다.
+- 이 둘을 함께 결합해 복잡한 화면의 상태를 관리할 수 있다.
 
-```js
+### 리듀서를 컨텍스트와 결합하는 방법
 
-```
+1. 컨텍스트를 만든다 .
+2. 상태와 디스패치를 ​​컨텍스트에 넣는다 .
+3. 트리의 어느 곳에서나 컨텍스트를 사용한다 .
+4. (하나의 파일로 이동해 정리한다)
+   => 컴포넌트가 깨끗하고 정돈된 상태로 유지되며 데이터를 가져오는 위치보다는 표시되는 내용에 중점을 둔다.
+
+- 앱이 성장함에 따라 이와 같은 context-reducer pair가 많이 있을 수 있다.
+- 이는 트리의 깊은 데이터에 액세스하려고 할 때마다 너무 많은 작업을 하지 않고도 앱을 확장하고 lift state up 시킬 수 있는 강력한 방법이다.
 
 </MainLayout>
