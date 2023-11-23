@@ -453,11 +453,273 @@ export default function SearchButton({onClick}) {
 
 ## 3. Synchronizing with Effects
 
+- 일부 컴포넌트는 외부 시스템과 동기화를 해야한다.
+- ex. React State를 기반으로 React가 아닌 컴포넌트 제어, 서버 연결 설정, 컴포넌트가 mounted될 때 분석 로그 전송
+- Effects를 사용하면 렌더링 후 일부 코드를 실행해 컴포넌트를 React 외부 시스템과 동기화 할 수 있다.
+
+### What are Effects and how are they different from events?
+
+- 컴포넌트 내부의 두 가지 유형: 렌더링 코드 / 이벤트 핸들러
+- 1. 렌더링 코드 : 컴포넌트의 최상위 수준에 있음. props, state를 가져와 변환하고 화면에 표시하는 JSX를 반환함. 렌더링 코드는 순수해야 함.
+- 2. 이벤트핸들러: 컴포넌트 내부에 중첩된 함수. input을 업데이트 하거나 api call을 호출 하거나 routing을 처리하는 등 특정 사용자 작업으로 인해 발생하는 side effect가 포함되어 있음.
+
+- Effect를 사용하면 특정 이벤트가 아닌 렌더링 자체로 발생하는 Side Effect를 지정할 수 있음.
+- 화면이 업데이트 된 후 Commit이 끝나면 Effect가 실행됨.
+
+### How to write an Effect
+
+- 1. Effect를 선언한다. 모든 렌더링 이후에 실행된다.
+- 2. Effect의 dependencies를 지정한다. 대부분의 Effect는 렌더링 할때마다가 아니라 필요할 때에만 다시 실행되어야 한다.
+- 3. 필요한 경우 cleanup을 지정한다. cleanup 함수를 반환하여 이를 수행한다.
+
+```js
+// 1.
+import { useEffect } from "react";
+
+function MyComponent() {
+  useEffect(() => {
+    // Code here will run after *every* render
+  });
+  return <div />;
+}
+
+// 2.
+// 종속성을 지정해 값이 동일한 경우 다시 실행되지 않도록 한다.
+// 값이 동일한지는 Object.is를 사용해서 비교한다.
+Object.is([], []); // false
+const foo = { a: 1 };
+const bar = { a: 1 };
+const sameFoo = foo;
+Object.is(foo, foo); // true
+Object.is(foo, bar); // false
+Object.is(foo, sameFoo); // true
+
+import { useState, useRef, useEffect } from "react";
+
+function VideoPlayer({ src, isPlaying }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (isPlaying) {
+      console.log("Calling video.play()");
+      ref.current.play();
+    } else {
+      console.log("Calling video.pause()");
+      ref.current.pause();
+    }
+  }, [isPlaying]);
+
+  return <video ref={ref} src={src} loop playsInline />;
+}
+
+export default function App() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [text, setText] = useState("");
+  return (
+    <>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={() => setIsPlaying(!isPlaying)}>
+        {isPlaying ? "Pause" : "Play"}
+      </button>
+      <VideoPlayer
+        isPlaying={isPlaying}
+        src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+      />
+    </>
+  );
+}
+
+// 3. Add clean up if needed
+useEffect(() => {
+  const connection = createConnection();
+  connection.connect();
+  return () => {
+    connection.disconnect();
+  };
+}, []);
+```
+
+### 종속성 배열 동작
+
+```js
+useEffect(() => {
+  // This runs after every render
+});
+
+useEffect(() => {
+  // This runs only on mount (when the component appears)
+}, []);
+
+useEffect(() => {
+  // This runs on mount *and also* if either a or b have changed since the last render
+}, [a, b]);
+```
+
+### How to handle the Effect firing twice in development?
+
+- React는 버그를 찾기 위해 개발 중에 의도적으로 컴포넌트를 다시 마운트한다.
+- 올바른 질문은 "Effect를 한 번 실행하는 방법"이 아니라 "Remount 후 작동하도록 Effect를 수정하는 방법"이다.
+- => cleanup 기능을 구현한다.
+
+```js
+// Controlling non-React widgets
+useEffect(() => {
+  const dialog = dialogRef.current;
+  dialog.showModal();
+  return () => dialog.close();
+}, []);
+
+// Subscribing to events
+useEffect(() => {
+  function handleScroll(e) {
+    console.log(window.scrollX, window.scrollY);
+  }
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+// Triggering animations
+useEffect(() => {
+  const node = ref.current;
+  node.style.opacity = 1; // Trigger the animation
+  return () => {
+    node.style.opacity = 0; // Reset to the initial value
+  };
+}, []);
+
+// Fetching data
+useEffect(() => {
+  let ignore = false;
+
+  async function startFetching() {
+    const json = await fetchTodos(userId);
+    if (!ignore) {
+      setTodos(json);
+    }
+  }
+
+  startFetching();
+
+  return () => {
+    ignore = true;
+  };
+}, [userId]);
+
+// Sending analytics
+useEffect(() => {
+  logVisit(url); // Sends a POST request
+}, [url]);
+```
+
+- 이벤트와 달리 Effect는 특정 상호 작용이 아닌 렌더링 자체에 의해 발생한다.
+- Effect를 사용하면 컴포넌트를 일부 외부 시스템(타사 API, 네트워크 등)과 동기화할 수 있다.
+- 기본적으로 Effect는 모든 렌더링(초기 렌더링 포함) 후에 실행된다.
+- React는 모든 종속성이 마지막 렌더링과 동일한 값을 갖는 경우 Effect를 건너뛴다.
+- 종속성을 "선택"할 수 없다. 이는 Effect 내부의 코드에 의해 결정된다.
+- 빈 종속성 배열( [])은 컴포넌트 "마운트", 즉 화면에 추가되는 항목에 해당한다.
+- Strict 모드에서 React는 Effect의 스트레스 테스트를 위해 컴포넌트를 두 번 마운트한다(개발 중에만).
+- 재마운트 때문에 Effect가 중단되면 clean up 기능을 구현해야한다.
+- React는 다음에 Effect가 실행되기 전과 마운트 해제 중에 clean up 함수를 호출한다.
+
 <br />{" "}
 
 ### Challenge
 
 ```js
+// 1. Focus a field on mount
+import { useEffect, useRef } from "react";
+
+export default function MyInput({ value, onChange }) {
+  const ref = useRef(null);
+  // ref.current.focus() 를 렌더링 중에 호출하는 것은 Side Effect라서 잘못된 것이다.
+  // 이벤트 핸들러 내부에 배치하거나 useEffect로 선언해야 한다.
+  // 이 경우 특정 상호작용이 아닌 컴포넌트의  등장으로 인해 side effect가 발생하므로 Effect에 넣어야 한다.
+
+  useEffect(() => {
+    ref.current.focus();
+    // 종속성 배열에 빈 배열을 넣어서 모든 렌더링 이후에 실행되는게 아니라 마운트 시에만 실행하도록 함
+  }, []);
+
+  return <input ref={ref} value={value} onChange={onChange} />;
+}
+
+// 2. Focus a field conditionally
+import { useEffect, useRef } from 'react';
+
+export default function MyInput({ shouldFocus, value, onChange }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (shouldFocus) {
+      ref.current.focus();
+    }
+    // shouldFocus를 사용하기 때문에 종속성으로 지정해야함.
+  }, [shouldFocus]);
+
+  return (
+    <input
+      ref={ref}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
+
+// 3. Fix an interval that fires twice
+import { useState, useEffect } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    function onTick() {
+      setCount(c => c + 1);
+    }
+
+    const intervalId = setInterval(onTick, 1000);
+    // clean up  콜백함수 추가. 그냥 함수 아니고 콜백함수로 써야함.
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return <h1>{count}</h1>;
+}
+
+// 4. Fix fetching inside an Effect
+import { useState, useEffect } from 'react';
+import { fetchBio } from './api.js';
+
+export default function Page() {
+  const [person, setPerson] = useState('Alice');
+  const [bio, setBio] = useState(null);
+  useEffect(() => {
+    // 경쟁조건 버그(race condition): 두 개의 비동기 작업이 서로 경주하고, 예상치 못한 순서로 도착할 수 있기 때문
+    let ignore = false;
+    setBio(null);
+    fetchBio(person).then(result => {
+      if (!ignore) {
+        setBio(result);
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, [person]);
+
+  return (
+    <>
+      <select value={person} onChange={e => {
+        setPerson(e.target.value);
+      }}>
+        <option value="Alice">Alice</option>
+        <option value="Bob">Bob</option>
+        <option value="Taylor">Taylor</option>
+      </select>
+      <hr />
+      <p><i>{bio ?? 'Loading...'}</i></p>
+    </>
+  );
+}
 
 ```
 
