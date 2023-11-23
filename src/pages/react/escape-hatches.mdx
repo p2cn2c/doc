@@ -1271,11 +1271,130 @@ function ChatRoom({ roomId, theme }) {
 
 ## 7. Removing Effect dependencies
 
-<br />{" "}
+- Effect를 작성할 때 Linter는 Effect가 읽는 모든 반응 값(예: props 및 state)을 Effect의 종속성 목록에 포함했는지 확인한다.
+- 불필요한 종속성으로 인해 Effect가 너무 자주 실행되거나 무한루프가 생성될 수 있다.
+- 불필요한 종속성을 검토하고 제거하자.
+  <br />
+
+### 종속성은 코드와 일치해야 한다.
+
+- Effect를 작성할 때 먼저 작업을 시작하고 중지하는 방법을 지정하자.
+- 그러면 Linter가 올바른 종속성을 제안한다.
+- Linter의 제안에 따라 입력하자.
+- 종속성을 제거하려면 종속성이 아님을 증명하자.(ex.컴포넌트 밖으로 이동)
+
+<br />
+### 종속성을 변경하려면 코드를 변경하자. - 1. 먼저 Effect의 코드를 변경하거나 반응
+값이 선언되는 방식을 변경한다. - 2. 그런 다음 linter를 따라 변경한 코드와 일치하도록
+종속성을 조정한다. - 3. 종속성 목록이 만족스럽지 않으면 첫 번째 단계로 돌아가서 코드를
+다시 변경한다.
+
+### 불필요한 종속성 제거
+
+- Q. 이 코드를 이벤트 핸들러로 이동해야 하나?
+- Q. Effect가 관련되지 않은 여러 가지 작업을 수행하고 있나?
+- Q. 다음 상태를 계산하기 위해 일부 상태를 읽고 있나?
+
+### 요약
+
+- 종속성은 항상 코드와 일치해야 한다.
+- 종속성이 만족스럽지 않은 경우 편집해야 할 것은 코드다.
+- Linter를 억제하면 매우 혼란스러운 버그가 발생하므로 항상 이를 피해야 한다.
+- 종속성을 제거하려면 해당 종속성이 필요하지 않다는 것을 Linter에 "증명"해야 한다.
+- 일부 코드가 특정 상호 작용에 대한 응답으로 실행되어야 하는 경우 해당 코드를 이벤트 핸들러로 이동하자.
+- 다양한 이유로 Effect의 다른 부분을 다시 실행해야 하는 경우 여러 Effect로 분할하자.
+- 이전 상태를 기반으로 일부 상태를 업데이트하려면 업데이트 기능을 전달하자.
+- "반응"하지 않고 최신 값을 읽으려면 Effect에서 Effect Event를 추출하자.
+- JavaScript에서는 객체와 함수가 서로 다른 시간에 생성된 경우 서로 다른 것으로 간주된다.
+- 객체 및 함수 종속성을 피하십시오. 구성 요소 외부 또는 효과 내부로 이동한다.
+  <br />{" "}
 
 ### Challenge
 
 ```js
+// 1. Fix a resetting interval
+useEffect(() => {
+  console.log("✅ Creating an interval");
+  const id = setInterval(() => {
+    console.log("⏰ Interval tick");
+    // 업데이트 기능을 사용
+    setCount((count) => count + 1);
+  }, 1000);
+  return () => {
+    console.log("❌ Clearing an interval");
+    clearInterval(id);
+  };
+  // count 종속성을 제거한다
+}, []);
+
+// 2. Fix a retriggering animation
+
+// 최신값을 읽어야 하지만 duration 변경 사항에 반응하지 않도록 함
+// 비반응형 코드를 Effect Event로 추출
+const onAppear = useEffectEvent((animation) => {
+  animation.start(duration);
+});
+
+useEffect(() => {
+  const animation = new FadeInAnimation(ref.current);
+  onAppear(animation);
+  return () => {
+    animation.stop();
+  };
+}, []);
+
+// 3. Fix a reconnecting chat
+import { useState, useEffect } from "react";
+import { createConnection } from "./chat.js";
+
+export default function ChatRoom({ roomId, serverUrl }) {
+  // 리랜더링으로 인해 prop이 변경되는걸 체크해야함
+  // option 대신 기본 prop으로 구성하면 최적화가 쉬움
+  useEffect(() => {
+    const connection = createConnection({
+      roomId: roomId,
+      serverUrl: serverUrl,
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
+
+// 4. Fix a reconnecting chat, again
+import { useState, useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+import {
+  createEncryptedConnection,
+  createUnencryptedConnection,
+} from './chat.js';
+
+export default function ChatRoom({ roomId, isEncrypted, onMessage }) {
+    // 반응성이 없는 onMessage는 Effect Event로 래핑해줌
+  const onReceiveMessage = useEffectEvent(onMessage);
+
+  useEffect(() => {
+    function createConnection() {
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId
+      };
+      if (isEncrypted) {
+        return createEncryptedConnection(options);
+      } else {
+        return createUnencryptedConnection(options);
+      }
+    }
+
+    const connection = createConnection();
+    connection.on('message', (msg) => onReceiveMessage(msg));
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, isEncrypted]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
 
 ```
 
