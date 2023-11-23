@@ -129,11 +129,325 @@ export default function Chat() {
 
 ## 2. Manipulating the DOM with refs
 
+- 리액트는 렌더링 출력과 일치하도록 DOM을 자동으로 업데이트 하기 때문에 컴포넌트가 DOM을 직접 조작할 일이 별로 없다.
+- 하지만 DOM 노드에 focus하거나 scroll 하거나 크기와 위치를 측정하기 위해서는 리액트에서 관리하는 DOM 요소에 접근해야 할 때도 있다.
+- 리액트에는 이런 작업을 수행하기 위한 기본 방법이 없기 때문에 DOM 노드에 ref 속성을 달아야 한다.
+
 <br />{" "}
+
+```js
+import { useRef } from "react";
+const myRef = useRef(null);
+<div ref={myRef}></div>;
+// You can use any browser APIs, for example:
+myRef.current.scrollIntoView();
+```
+
+### How to manage a list of refs using a ref callback
+
+- useRef와 같은 hooks는 컴포넌트의 최상위 수준에서만 호출되어야 함. 루프나 조건 내에서는 호출이 불가능함.
+- DOM 조작을 직접 하는 방법은 깨지기 쉬우며 DOM 구조가 변경되는 경우에 깨질 수 있음.
+- ref attribute에 ref callback 함수를 전달하면 id로 ref에 접근할 수 있음.
+
+```js
+// BAD CASE
+<ul>
+  {items.map((item) => {
+    // Doesn't work!
+    const ref = useRef(null);
+    return <li ref={ref} />;
+  })}
+</ul>
+```
+
+```js
+//  USE CASE
+import { useRef } from "react";
+
+export default function CatFriends() {
+  const itemsRef = useRef(null);
+
+  function scrollToId(itemId) {
+    // ref Map을 사용함
+    const map = getMap();
+    const node = map.get(itemId);
+    node.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }
+
+  function getMap() {
+    if (!itemsRef.current) {
+      // Initialize the Map on first usage.
+      itemsRef.current = new Map();
+    }
+    return itemsRef.current;
+  }
+
+  return (
+    <>
+      <nav>
+        <button onClick={() => scrollToId(0)}>Tom</button>
+        <button onClick={() => scrollToId(5)}>Maru</button>
+        <button onClick={() => scrollToId(9)}>Jellylorum</button>
+      </nav>
+      <div>
+        <ul>
+          {catList.map((cat) => (
+            <li
+              key={cat.id}
+              // ref callback을 ref에 넘겨줘서 id마다 node를 저장함
+              ref={(node) => {
+                const map = getMap();
+                if (node) {
+                  map.set(cat.id, node);
+                } else {
+                  map.delete(cat.id);
+                }
+              }}
+            >
+              <img src={cat.imageUrl} alt={"Cat #" + cat.id} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+const catList = [];
+for (let i = 0; i < 10; i++) {
+  catList.push({
+    id: i,
+    imageUrl: "https://placekitten.com/250/200?image=" + i,
+  });
+}
+```
+
+### Accessing another component’s DOM nodes
+
+- 다른 컴포넌트의 DOM 요소에 접근하고 싶을 때, 아래와 같이 자체 컴포넌트에 ref를 달아도 의도대로 작동하지 않는다.
+- 리액트의 컴포넌트는 다른 컴포넌트의 DOM 노드에 접근하는 걸 허용하지 않는다. 다른 컴포넌트의 DOM 노드를 수동으로 조작하면 코드가 취약해지기 때문이다.
+- 대신 컴포넌트는 children으로 ref를 전달할 수 있다.
+
+```js
+// BAD CASE
+<MyInput ref={inputRef} />
+```
+
+```js
+// USE CASE
+import { forwardRef, useRef } from "react";
+
+// ref를 전달할 컴포넌트를 forwardRef로 감싼다.
+// children으로 ref를 내려준다.
+const MyInput = forwardRef((props, ref) => {
+  return <input {...props} ref={ref} />;
+});
+
+export default function Form() {
+  const inputRef = useRef(null);
+
+  function handleClick() {
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <MyInput ref={inputRef} />
+      <button onClick={handleClick}>Focus the input</button>
+    </>
+  );
+}
+```
+
+### When React attaches the refs
+
+- 모든 리액트의 업데이트는 2Step이다
+
+1. 렌더링: React는 화면에 무엇이 표시되어야 하는지 파악하기 위해 컴포넌트를 호출한다
+2. 커밋: React는 DOM에 변경 사항을 적용한다
+
+- 렌더링 중에는 ref에 접근하지 않는다. DOM node에 접근하는 ref도 마찬가지다.
+- 초기 렌더링 시에는 DOM 노드가 아직 생성되지 않아서 ref.current는 null이다.
+- 업데이트 렌더링 중에는 DOM 노드는 아직 업데이트 되지 않았다. DOM을 업데이트 한 이후에 변경된다.
+- 일반적으로는 이벤트 핸들러에서 ref에 접근하지만, 어떤 경우엔 useEffect가 필요할 수 있다.
+
+```js
+// 동기적으로 업데이트를 하고 싶은 경우 flushSync 사용
+// 래핑된 코드가 실행된 직후에 DOM을 동기적으로 업데이트 함.
+flushSync(() => {
+  setTodos([...todos, newTodo]);
+});
+listRef.current.lastChild.scrollIntoView();
+```
+
+### Best practices for DOM manipulation with refs
+
+- "React 외부로 나가야"할 때만 사용해야 한다. Ex. 포커스 관리, 스크롤 위치 또는 React가 노출하지 않는 브라우저 API 호출
+- React에서 관리하는 DOM 노드를 직접 변경하거나 수정해서는 안된다. 충돌이 발생할 수 있다.
+- React가 업데이트 하지 않는 DOM부분을 수정하거나 제거하는 것은 안전하다.
 
 ### Challenge
 
 ```js
+// 1. Play and pause the video
+export default function VideoPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  // DOM 조작을 할 video에 ref를 추가한다.
+  const ref = useRef(null);
+
+  function handleClick() {
+    const nextIsPlaying = !isPlaying;
+    setIsPlaying(nextIsPlaying);
+
+    // 상태에 따라 ref로 DOM 요소를 제어한다.
+    if (nextIsPlaying) {
+      ref.current.play();
+    } else {
+      ref.current.pause();
+    }
+  }
+
+  return (
+    <>
+      <button onClick={handleClick}>{isPlaying ? "Pause" : "Play"}</button>
+      <video
+        width="250"
+        // ref를 달아준다
+        ref={ref}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      >
+        <source
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+          type="video/mp4"
+        />
+      </video>
+    </>
+  );
+}
+
+// 2. Focus the search field
+import {useRef} from 'react'
+export default function Page() {
+  const ref = useRef(null)
+  return (
+    <>
+      <nav>
+        <button onClick={() => ref.current.focus()}>Search</button>
+      </nav>
+      <input
+        ref={ref}
+        placeholder="Looking for something?"
+      />
+    </>
+  );
+}
+
+// 3. Scrolling an image carousel
+import { useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
+
+export default function CatFriends() {
+  const [index, setIndex] = useState(0);
+  const ref = useRef(null)
+
+  return (
+    <>
+      <nav>
+        <button onClick={() => {
+        // 동기적으로 DOM을 업데이트 시켜준다
+        flushSync(()=> {
+           if (index < catList.length - 1) {
+            setIndex(index + 1);
+          } else {
+            setIndex(0);
+          }
+        })
+          ref.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+          })
+        }}>
+          Next
+        </button>
+      </nav>
+      <div>
+        <ul>
+          {catList.map((cat, i) => (
+            <li key={cat.id}
+              ref={index === i ? ref : null}
+              >
+              <img
+                className={
+                  index === i ?
+                    'active' :
+                    ''
+                }
+                src={cat.imageUrl}
+                alt={'Cat #' + cat.id}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+const catList = [];
+for (let i = 0; i < 10; i++) {
+  catList.push({
+    id: i,
+    imageUrl: 'https://placekitten.com/250/200?image=' + i
+  });
+}
+
+
+
+// 4. Focus the search field with separate components
+import {forwardRef, useRef} from 'react';
+
+export default function Page() {
+  const inputRef = useRef(null)
+  return (
+    <>
+      <nav>
+        <SearchButton onClick={()=>inputRef.current.focus() }/>
+      </nav>
+      <SearchInput ref={inputRef} />
+    </>
+  );
+}
+
+// SearchInput
+import {forwardRef, useRef} from 'react';
+
+export default forwardRef(
+  function SearchInput(props, ref) {
+  return (
+    <input
+      ref={ref}
+      placeholder="Looking for something?"
+    />
+  );
+}
+)
+
+// SearchButton
+import {forwardRef, useRef} from 'react';
+
+export default function SearchButton({onClick}) {
+  return (
+    <button onClick={onClick}>
+      Search
+    </button>
+  );
+}
 
 ```
 
