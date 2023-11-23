@@ -1159,12 +1159,114 @@ export default function Page() {
 
 ## 6. Separating events from Effects
 
+- 이벤트 핸들러는 동일한 상호작용을 다시 수행할 때만 다시 실행된다.
+- Effects는 Prop 또는 상태 변수와 같이 읽은 일부 값이 마지막 렌더링 중 값과 다른 경우 다시 동기화한다.
+- 이 두 가지 동작을 혼합하고 싶을 때(일부 값에는 응답하고 다른 값에는 응답하지 않고 다시 실행되는 Effect)
+
+### Choosing between event handlers and Effects
+
+- 이벤트는 특정 상호작용에 대한 응답으로 실행된다.(ex. 메세지 보내기 버튼 클릭)
+- 동기화가 필요할 때 Effect가 실행된다(사용자가 수행하는 상호작용과 관계없이 필요할 때 연결, 동기화 상태 보장)
+- 이벤트는 수동으로 트리거됨, 효과는 자동으로 동기화를 유지하는데 필요한 만큼 자주, 다시 실행됨.
+- 이벤트 핸들러 내부의 로직은 반응적이지 않음. Effects 내부 논리는 반응적임(종속성으로 지정해 반응값을 읽음. 리랜더링으로 해당 값이 변경되면 Effect로직 실행).
+
+### Extracting non-reactive logic out of Effects
+
+- useEffectEvent
+  - Effects 내부에서만 호출하자.
+  - 절대 다른 컴포넌트나 Hooks에 전달하지 말자.
+
+### 요약
+
+- 이벤트 핸들러는 특정 상호 작용에 대한 응답으로 실행된다.
+- 동기화가 필요할 때마다 효과가 실행된다.
+- 이벤트 핸들러 내부의 로직은 반응적이지 않는다.
+- Effects 내부의 논리는 반응적이다.
+- 비반응 로직을 효과에서 Effect Events로 이동할 수 있다.
+- Effects 내부에서만 Effect Events를 호출하자.
+- Effect Events를 다른 컴포넌트나 hook에 전달하지 말자.
+
 <br />{" "}
 
 ### Challenge
 
 ```js
+// 1. Fix a variable that doesn’t update
+useEffect(() => {
+  const id = setInterval(() => {
+    setCount((c) => c + increment);
+  }, 1000);
+  return () => {
+    clearInterval(id);
+  };
+}, [increment]);
 
+// 2. Fix a freezing counter
+import { useState, useEffect } from "react";
+import { experimental_useEffectEvent as useEffectEvent } from "react";
+
+const onTick = useEffectEvent(() => {
+  setCount((c) => c + increment);
+});
+
+useEffect(() => {
+  const id = setInterval(() => {
+    onTick();
+  }, 1000);
+  return () => {
+    clearInterval(id);
+  };
+}, []);
+
+// 3. Fix a non-adjustable delay
+//  비반응성으로 만들고 싶을 때만 Effect Event 추출해야 함.
+const onTick = useEffectEvent(() => {
+  setCount((c) => c + increment);
+});
+
+useEffect(() => {
+  const id = setInterval(() => {
+    onTick();
+  }, delay);
+  return () => {
+    clearInterval(id);
+  };
+}, [delay]);
+
+// 4. Fix a delayed notification
+import { useState, useEffect } from "react";
+import { experimental_useEffectEvent as useEffectEvent } from "react";
+import { createConnection, sendMessage } from "./chat.js";
+import { showNotification } from "./notifications.js";
+
+const serverUrl = "https://localhost:1234";
+
+function ChatRoom({ roomId, theme }) {
+  // id를 받아서 실시간 값을 반영하기
+  const onConnected = useEffectEvent((connectedRoomId) => {
+    showNotification("Welcome to " + connectedRoomId, theme);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    // 이전 timeout이 있으면 그걸 취소하고 새로 등록하기
+    let notificationTimeoutId;
+    connection.on("connected", () => {
+      notificationTimeoutId = setTimeout(() => {
+        onConnected(roomId);
+      }, 2000);
+    });
+    connection.connect();
+    return () => {
+      connection.disconnect();
+      if (notificationTimeoutId !== undefined) {
+        clearTimeout(notificationTimeoutId);
+      }
+    };
+  }, [roomId]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
 ```
 
 ## 7. Removing Effect dependencies
