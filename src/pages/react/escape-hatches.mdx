@@ -1306,7 +1306,7 @@ function ChatRoom({ roomId, theme }) {
 - 이전 상태를 기반으로 일부 상태를 업데이트하려면 업데이트 기능을 전달하자.
 - "반응"하지 않고 최신 값을 읽으려면 Effect에서 Effect Event를 추출하자.
 - JavaScript에서는 객체와 함수가 서로 다른 시간에 생성된 경우 서로 다른 것으로 간주된다.
-- 객체 및 함수 종속성을 피하십시오. 구성 요소 외부 또는 효과 내부로 이동한다.
+- 객체 및 함수 종속성을 피하십시오. 컴포넌트 외부 또는 효과 내부로 이동한다.
   <br />{" "}
 
 ### Challenge
@@ -1400,12 +1400,113 @@ export default function ChatRoom({ roomId, isEncrypted, onMessage }) {
 
 ## 8. Reusing logic with custom Hooks
 
+- React에는 useState, useContext, useEffect 와 같은 여러 내장 hook이 존재한다.
+- 때로는 더 구체적인 목적을 위한 Hook이 필요해진다.
+- App의 요구사항에 맞게 자신만의 Custom Hook을 만들 수 있다.
+
+### Custom Hooks: Sharing logic between components
+
+- Hook이름은 항상 use로 시작한다.
+- 리액트 컴포넌트의 이름은 대문자로 시작해야 합니다. 그리고 JSX와 같이 React가 표시하는 방법을 반환해야 한다.
+- use로 시작하지 않는 함수 호출이 있으면 내부에 React 상태가 포함될 수 없다는 걸 확신할 수 있다.
+- 내부에 하나 이상의 hook을 포함하는 경우 접두사로 use로 넣어야 한다.
+  <br />
+- Custom Hook을 사용하면 상태 저장 논리를 공유할 수 있지만 상태 자체는 공유할 수 없다.
+- Hook에 대한 각 호출은 동일한 Hook에 대한 다른 모든 호출과 완전히 독립적이다.
+- Custom Hook은 더 나은 패턴으로 마이그레이션하는 데 도움이 된다.
+
+### 요약
+
+- Custom Hook를 사용하면 컴포넌트 간에 논리를 공유할 수 있다.
+- useCustom Hook는 대문자로 시작하여 이름을 지정해야 한다 .
+- Custom Hook는 상태 자체가 아닌 상태 저장 논리만 공유한다.
+- 하나의 Hook에서 다른 Hook으로 반응 값을 전달할 수 있으며 최신 상태로 유지된다.
+- 컴포넌트가 다시 렌더링될 때마다 모든 Hook이 다시 실행된다.
+- 사용자 정의 Hook의 코드는 컴포넌트의 코드처럼 순수해야한다.
+- 사용자 정의 Hooks에서 수신한 이벤트 핸들러를 Effect Events로 래핑한다.
+- useMount와 같은 사용자 정의 Hook을 생성하지 말자. 목적을 구체적으로 유지해라.
+- 코드 경계를 선택하는 방법과 위치는 사용자에게 달려 있다.
+
 <br />{" "}
 
 ### Challenge
 
 ```js
+// 1. Extract a useCounter Hook
+import { useState, useEffect } from "react";
 
+export function useCounter() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount((c) => c + 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return count;
+}
+
+// 2. Make the counter delay configurable
+import { useState, useEffect } from "react";
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount((c) => c + 1);
+    }, delay);
+    return () => clearInterval(id);
+  }, [delay]);
+  return count;
+}
+
+// 3. Extract useInterval out of useCounter
+import { useState } from "react";
+import { useInterval } from "./useInterval.js";
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useInterval(() => {
+    setCount((c) => c + 1);
+  }, delay);
+  return count;
+}
+
+import { useEffect } from "react";
+export function useInterval(onTick, delay) {
+  useEffect(() => {
+    const id = setInterval(onTick, delay);
+    return () => clearInterval(id);
+  }, [onTick, delay]);
+}
+
+// 4. Fix a resetting interval
+import { useEffect } from "react";
+import { experimental_useEffectEvent as useEffectEvent } from "react";
+
+export function useInterval(callback, delay) {
+  // tick 효과를 동기화되지 않는 값으로 래핑한다. 매초 재설정 되어 상호간섭하지 않도록 막는다.
+  const onTick = useEffectEvent(callback);
+  useEffect(() => {
+    const id = setInterval(onTick, delay);
+    return () => {
+      clearInterval(id);
+    };
+  }, [delay]);
+}
+
+// 5. Implement a staggering movement
+function useDelayedValue(value, delay) {
+  const [delayedValue, setDelayedValue] = useState(value);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setDelayedValue(value);
+    }, delay);
+  }, [value, delay]);
+
+  return delayedValue;
+}
 ```
 
 </MainLayout>
