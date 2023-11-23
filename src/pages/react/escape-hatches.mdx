@@ -1,0 +1,200 @@
+import MainLayout from "../../layouts/MainLayout.astro";
+import ReactSample from "../../components/ReactSample.jsx";
+
+<MainLayout>
+# CH4. Escape Hatches
+`Some of your components may need to control and synchronize with systems outside of React. For example, you might need to focus an input using the browser API, play and pause a video player implemented without React, or connect and listen to messages from a remote server. In this chapter, you’ll learn the escape hatches that let you “step outside” React and connect to external systems. Most of your application logic and data flow should not rely on these features.`
+-  일부 컴포넌트는 React 외부 시스템을 제어하고 동기화해야 할 수도 있다.(ex. Browser API, Video Player, remote server)
+
+## 1. Referencing values with refs
+
+- `ref` : 컴포넌트가 어떤 정보를 기억하게 하고 싶지만, 그 정보다 새 렌더링을 트리거 하는 것을 원하지 않을 경우 사용
+- state와 마찬가지로 리렌더링 시에 React에 의해 유지됨.
+- 사용 예: timeout IDs, DOM elements - 컴포넌트의 렌더링 출력에 영향을 주지 않는 값
+- 리액트가 추적하지 않는 값을 사용하기 위해 컴포넌트에 React의 단방향 데이터 흐름에서 "hatch"를 만든다.
+
+```ts
+import { useRef } from "react";
+const ref = useRef(0);
+/**
+{ 
+  current: 0 // The value you passed to useRef
+}
+ */
+```
+
+<br />
+
+- 정보의 일부가 렌더링에 사용될 때 해당 정보를 state로 유지해라.
+- 정보의 일부가 이벤트 핸들러에만 필요하고 해당 정보를 변경해도 다시 렌더링할 필요가 없는 경우 ref를 사용하는 것이 더 효율적일 수 있다.
+
+### ref vs state
+
+- Return Value: `{current: inivialValue}` / `[value, setValue]`
+- Trigger: 변경 시 리렌더링 트리거 X / O
+- Mutable: mutable - 렌더링 프로세스 외부에서 값을 수정하고 업데이트 할 수 있음 / immutable - 리랜더링을 대기열에 추가하려면 setState로 state 변수를 수정해야함
+- Snapshot: 렌더링 하는 동안 current 값을 읽거나 쓰면 안됨 / 언제든지 stae 읽을 수 있음. 하지만 각 렌더링 시에는 변경되지 않는 스냅샷 자체 상태가 있음
+
+<br />{" "}
+
+### Best practices for refs
+
+- ref를 탈출구로 다루자.
+- 렌더링 중에 ref.current를 읽거나 수정하지 말자. 렌더링 중에 정보가 필요한 경우 state를 대신 사용하자.(리액트는 ref가 언제 변경되었는지 모름)
+- ref는 현재 값을 변경하면 즉시 변경된다.(state는 모든 렌더링에 대한 스냅샷처럼 작동하기 때문에 동기식으로 업데이트 되지 않는다.) <br/>
+- => 이는 ref자체가 일반 JS 객체이기 때문
+
+### Refs and the DOM
+
+- ref는 어떤 값이든 가리킬 수 있다.
+- 일반적인 사용 사례는 DOM 요소에 접근하는 것이다.
+
+### Challenge
+
+```js
+// 1. Fix a broken chat input
+let timeoutID = useRef(null);
+timeoutId.current = setTimeout(() => {
+  alert("Sent!");
+  setIsSending(false);
+}, 3000);
+// 지역 변수를 사용하면 컴포넌트가 다시 렌더링 될때마다 초기화됨
+// 리액트가 렌더링 사이에도 보존하는 ref에 저장해야 함
+
+// 2. Fix a component failing to re-render
+// 값이 렌더링 출력을 계산하는데 사용됨.
+// ref를 제거하고 state로 변경.
+export default function Toggle() {
+  const [isOnRef, toggleOnRef] = useState(false);
+
+  return (
+    <button onClick={() => toggleOnRef(!isOnRef)}>
+      {isOnRef ? "On" : "Off"}
+    </button>
+  );
+}
+
+// 3. Fix debouncing
+function DebouncedButton({ onClick, children }) {
+  // 지역변수가 아닌 useRef를 사용해서 컴포넌트가 리랜더링 되더라도 기존 값을 기억하고 있도록 한다.
+  const timeoutRef = useRef(null);
+  return (
+    <button
+      onClick={() => {
+        clearTimeout(timeoutRef.current);
+        // ref를 사용할 때는 현재값이 current에 저장된다
+        timeoutRef.current = setTimeout(() => {
+          onClick();
+        }, 1000);
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// 4. Read the latest state
+export default function Chat() {
+  const [text, setText] = useState('');
+  // state는 스냅샷 처럼 동작하기 때문에 timeout과 같은 비동기 작업에서 최신 상태를 읽을 수 없다.
+  // ref에 최신 입력 텍스트를 유지해서 alert시에 보여주면 된다.
+  const textRef = useRef(text);
+
+  function handleChange(e) {
+    setText(e.target.value);
+    textRef.current = e.target.value;
+  }
+
+  function handleSend() {
+    setTimeout(() => {
+      alert('Sending: ' + textRef.current);
+    }, 3000);
+  }
+
+  return (
+    <>
+      <input
+        value={text}
+        onChange={handleChange}
+      />
+      <button
+        onClick={handleSend}>
+        Send
+      </button>
+    </>
+  );
+}
+
+```
+
+## 2. Manipulating the DOM with refs
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 3. Synchronizing with Effects
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 4. You Might Not Need An Effect
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 5. Lifecycle of reactive effects
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 6. Separating events from Effects
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 7. Removing Effect dependencies
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+## 8. Reusing logic with custom Hooks
+
+<br />{" "}
+
+### Challenge
+
+```js
+
+```
+
+</MainLayout>

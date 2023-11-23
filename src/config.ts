@@ -29,6 +29,11 @@ export const SIDEBAR = [
     text: "Managing State",
     link: `${DEFAULT_URL}/react/managing-state`,
   },
+  {
+    text: "Escape Hatches",
+    link: `${DEFAULT_URL}/react/escape-hatches`,
+  },
+
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },
   // { text: "Colors", link: `${DEFAULT_URL}/core/colors` },
