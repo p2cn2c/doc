@@ -33,6 +33,10 @@ export const SIDEBAR = [
     text: "Escape Hatches",
     link: `${DEFAULT_URL}/react/escape-hatches`,
   },
+  {
+    text: "React Hooks",
+    link: `${DEFAULT_URL}/react/hooks`,
+  },
 
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },

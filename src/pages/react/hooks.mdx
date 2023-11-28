@@ -1,0 +1,284 @@
+import MainLayout from "../../layouts/MainLayout.astro";
+
+<MainLayout>
+# React Hooks
+State Hooks
+ - useState: 직접 업데이트 할 수 있는 상태 변수를 선언
+ - useReducer: 리듀서 함수 내부의 업데이트 로직을 사용해 상태 변수를 선언
+
+Context Hooks
+
+- useContext: 컨텍스트를 읽고 구독
+
+Ref Hooks
+
+- useRef: ref를 선언. 주로 DOM 노드를 담는데 사용
+- useImperativeHandle: 컴포넌트에 의해 노출된 ref를 정의. 거의 사용하지 않음
+
+Effect Hooks
+
+- useEffect: 구성요소를 외부 시스템에 연결
+- useLayoutEffect: 브라우저가 화면을 다시 그리기 전에 실행됨. 레이아웃 측정 가능.
+- useInsertionEffect: React가 DOM을 변경하기 전에 실행. 라이브러리는 여기에 동적 CSS를 삽입할 수 있음
+
+Perfomarnce Hooks
+
+- useMemo: 비용이 많이 드는 계산 결과를 캐싱
+- useCallback: 함수 정의를 최적화된 컴포넌트에 전달하기 전에 캐싱
+- useTransition: 상태 전환을 논블로킹으로 표시하고 다른 업데이트가 이를 중단하도록 허용할수있음
+- useDefferedValue: UI의 중요하지 않은 부분 업데이트를 연기하고 다른 부분이 먼저 업데이트 되도록 할 수 있음
+
+Resource Hooks
+
+- use: Promise또는 context와 같은 리소스의 값을 읽을 수 있음
+
+ETC Hooks
+
+- useDebugValue: custom hook에 대해 devtool 표시 레이블을 정의할 수 있음
+- useId: 컴포넌트가 고유 ID를 자신과 연결할 수 있음. 접근성 API와 같이 사용됨
+- useSyncExternalStore: 컴포넌트가 외부 저장소를 구독할 수 있도록 함
+
+Custom Hook: 사용자 정의 hook
+
+## useState
+
+```ts
+const [state, setState] = useState(initialState);
+```
+
+- 배열 구조분해 할당으로 이름 지정
+
+### Parameters
+
+- initialState: 초기 상태값. 초기 렌더링 이후에 무시됨
+
+### Return
+
+- 두 개 값이 있는 배열 리턴
+
+1. 현재 상태.
+2. 상태를 다른 값으로 업데이트 하고 다시 렌더링을 트리거 할 수 있는 set 함수:setSomething(nextState)
+
+### Caveats
+
+- 컴포넌트 최상회 수준이나 자체 hook에서만 호출 가능
+- set함수는 다음 렌더링에 대한 상태 변수만 업데이트 함.
+- state에 제공한 새 값이 Object.is 비교결과가 현재 값과 동일하면 컴포넌트와 하위 항목 리랜더링을 건너뜀.
+- 모든 이벤트 핸들러가 실행되고 상태 업데이트를 일괄 처리함. => DOM에 접근하기 위해 업데이트를 강제 해야 하는 경우는 flushSync사용.
+
+## useEffect
+
+```ts
+useEffect(setup, dependencies);
+
+useEffect(() => {
+  const connection = createConnection(serverUrl, roomId);
+  connection.connect();
+  return () => {
+    connection.disconnect();
+  };
+}, [serverUrl, roomId]);
+```
+
+### Parameters
+
+- setup: Effect의 로직이 포함된 기능. 선택적으로 cleanup 함수를 반환할 수도 있음. 컴포넌트가 DOM에 추가되면 React는 setup기능을 실행함. 변경된 디펜던시를 사용해 리랜더링 할때마다 cleanup 기능을 실행한 후, 새 값을 사용해 setup기능을 실행함. 컴포넌트가 DOM에서 제거된 후에는 cleanup기능을 실행함
+- dependencies(optional): 코드 내부에서 참조되는 모든 반응값의 목록. 각 디펜던시를 Object.is 비교를 사용해 이전값과 비교함. 인수를 생략하면 컴포넌트를 렌더링 할때마다 effect가 다시 실행됨.
+
+### Returns
+
+- undefined를 반환함
+
+### Caveats
+
+- 외부 시스템과 동기화하려는게 아니면 useEffect가 필요하지 않을 수 있음
+- Effect가 인터렉션과 관련해 화면 페인트 시기를 제어해야 하는 경우 useLayoutEffect를 사용
+- Effect는 클라이언트에서만 실행됨. 서버렌더링 중에는 실행되지 않음.
+
+## useRef
+
+```ts
+const ref = useRef(initialValue);
+```
+
+### Parameters
+
+- initialValue: ref 객체의 속성 초기값
+
+### Return
+
+- 단일 속성을 가진 객체 반환
+- current: 처음에 initialValue가 설정됨
+
+### Caveats
+
+- 속성을 변경할 수 있음. state와 달리 변경 가능함. 하지만 렌더링에 사용되는 object를 가지고 있는 경우 변경하면 안됨.
+- 속성을 변경해도 컴포넌트를 다시 렌더링하지 않음. ref는 일반 JS 객체라서 리액트는 언제 변경됐는지 알지 못함.
+- 초기화를 제외하고는 렌더링 중에는 읽거나 쓰면 안됨. 컴포넌트 동작을 예측할 수 없어짐.
+
+## forwardRef
+
+- 컴포넌트가 ref를 사용하여 DOM노드를 상위 컴포넌트에 노출시킬 때 사용한다
+
+```ts
+const SomeComponent = forwardRef(render);
+
+import { forwardRef } from "react";
+
+const MyInput = forwardRef(function MyInput(props, ref) {
+  // ...
+});
+```
+
+### Parameters
+
+- render: 컴포넌트의 렌더링 기능. 리액트는 props를 사용해 이 함수를 호출하고, ref 컴포넌트가 상위 요소로부터 받은 것을 사용함. 반환하는 JSX는 컴포넌트의 return이 됨
+
+### Returns
+
+- JSX에서 렌더링가능한 리액트 컴포넌트 반환.
+- 일반 리액트 컴포넌트와 달리 return된 컴포넌트도 ref prop을 받을 수 있음.
+
+## useMemo
+
+- 리랜더링 사이에 계산 결과를 캐시할 수 있음
+
+```ts
+const cachedValue = useMemo(calculateValue, dependencies);
+
+import { useMemo } from "react";
+
+function TodoList({ todos, tab }) {
+  const visibleTodos = useMemo(() => filterTodos(todos, tab), [todos, tab]);
+  // ...
+}
+```
+
+### Parameters
+
+- calculateValue: 캐시하려는 값을 계산하는 함수
+- dependencies: 코드 내부에서 참조하는 반응값의 목록. Object.is로 디펜던시 비교.
+
+### Returns
+
+- 초기 렌더링 시 인수없이 calculateValue 호출한 결과를 반환함
+- 다음 렌더링 중에는 마지막 렌더링에서 이미 저장된 값을 반환하거나(디펜던시가 변경되지 않은 경우), 다시 호출해 calculateValue 결과를 반환함.
+
+### Caveats
+
+- 리액트는 특별한 이유가 없는 한 캐시된 값을 버리지 않음.
+- 첫 번째 렌더링이 더 빨라지지는 않음. 불필요한 업데이트 작업을 건너뛰는 데 도움이 됨.
+
+## memo
+
+- prop이 변경되지 않은 경우, 컴포넌트를 다시 렌더링하는 걸 건너뛸 수 있음
+- 컴포넌트를 래핑해 컴포넌트의 memoized 버전을 얻을 수 있음
+- 성능 최적화이지 보장이 아님
+
+```ts
+const MemoizedComponent = memo(SomeComponent, arePropsEqual);
+
+import { memo } from "react";
+const SomeComponent = memo(function SomeComponent(props) {
+  // ...
+});
+```
+
+### Parameters
+
+- Component: memoize 하고 싶은 컴포넌트. 컴포넌트를 수정하지 않고 메모된 새 컴포넌트를 반환함. forwardRef 허용됨
+- arePropsEqual(optional): prop이 이전 prop과 새 prop이 동일한 경우 반환해야 함. 일반적으로 지정하지 않음.
+
+### Returns
+
+- 새로운 리액트 컴포넌트를 리턴함.
+
+## flushSync
+
+- React가 보류 중인 모든 작업을 flush하고 DOM을 동기식으로 업데이트하도록 호출함
+- 대부분의 경우 flushSync를 피할 수 있음. 최후의 수단으로 사용할 것.
+
+```ts
+import { flushSync } from "react-dom";
+
+flushSync(() => {
+  setSomething(123);
+});
+```
+
+### Parameters
+
+- callback: 즉시 이 콜백을 호출하고 모든 업데이트를 동기적으로 flush함. 보류중인 업데이트, effect를 flush할 수도 있음.
+
+### Returns
+
+- undefined return
+
+### Caveats
+
+- 성능이 크게 저하될 수 있음. 드물게 사용할 것.
+- 보류중인 Suspense boundary가 fallback 상태를 표시하도록 강제할 수 있음
+- 보류중인 effect를 실행하고, 반환되기 전에 포함된 모든 업데이트를 적용할 수 있음.
+
+## useSyncExternalStore
+
+- 외부 저장소를 구독할 수 있게 해줌
+- subscribe 함수는 store를 구독하고, 구독을 취소하는 함수를 반환해야 함.
+- getSnapshot 함수는 store에서 데이터의 snapshot을 읽어야 함.
+
+```ts
+const snapshot = useSyncExternalStore(
+  subscribe,
+  getSnapshot,
+  getServerSnapshot
+);
+```
+
+### Parameters
+
+- subscribe: callback argument를 가져와 store에 구독하는 함수. store가 변경되면 callback을 부름. 컴포넌트가 다시 렌더링 됨. 구독을 cleanup 하는 함수를 반환해야 함.
+- getSnapshot: 컴포넌트에 필요한 store의 데이터 스냅샷을 반환하는 함수. store가 변경되지 않는 동안은 동일한 값을 반환해야 함.
+- getServerSnapshot(optional): store에 있는 데이터의 초기 스냅샷을 반환함. 서버 렌더링 및 클라이언트에서 서버 렌더링 콘턴츠를 하이드레이션 하는 동안에만 사용됨.
+
+### Returns
+
+- 렌더링 로직에 사용할 수 있는 store의 현재 스냅샷
+
+### Caveats
+
+- getSnapshot에서 반환한 store 스냅샷은 변경할 수 없어야 함.
+- 다시 렌더링하는 동안 다른 subscribe함수가 전달되면, 리액트는 새로 전달된 함수를 사용해 store를 다시 구독함.
+
+## useImperativeHandle
+
+- ref로 노출된 handle을 사용자가 정의할 수 있게 해줌
+
+```ts
+useImperativeHandle(ref, createHandle, dependencies);
+
+import { forwardRef, useImperativeHandle } from "react";
+
+const MyInput = forwardRef(function MyInput(props, ref) {
+  useImperativeHandle(
+    ref,
+    () => {
+      return {
+        // ... your methods ...
+      };
+    },
+    []
+  );
+});
+```
+
+### Parameters
+
+- ref: forwardRef의 render함수 두번째 인수로 받음.
+- createHandle: 인수를 사용하지 않고 노출시키려는 ref handle을 반환하는 함수
+- dependencies(optional): 코드 내부에서 참조하는 모든 반응값의 목록.
+
+### Returns
+
+- undefined return
+
+</MainLayout>
