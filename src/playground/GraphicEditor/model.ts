@@ -4,6 +4,11 @@ class GraphicEditor {
   model: DomainModel;
   viewer: GraphicViewer;
 
+  constructor() {
+    this.model = undefined;
+    this.viewer = new GraphicViewer();
+  }
+
   initViewer() {
     // editor가 viewer에게 model을 전달하면서 part 만들어줘!
     this.viewer.createParts(this.model);
@@ -13,13 +18,15 @@ class GraphicEditor {
 import RectanglePart from "./RectanglePart";
 import CirclePart from "./CirclePart";
 import PenPart from "./PenPart";
-class GraphicViewer {
-  partFactory;
 
-  setPartFactory(partFactory) {
+type PartFactory = any;
+class GraphicViewer {
+  partFactory: PartFactory;
+
+  setPartFactory(partFactory: PartFactory) {
     this.partFactory = partFactory;
   }
-  createParts(model) {
+  createParts(model: PartFactory[]) {
     // model의 item을 순회하면서 타입별로 part를 생성 후 화면에 표시
     model.forEach((item) => {
       let part = this.partFactory.createPart(item);
@@ -30,13 +37,13 @@ class GraphicViewer {
     });
   }
 
-  addPart(part) {
+  addPart(part: PartFactory) {
     //
   }
 }
 
 class partFactory {
-  createPart(item) {
+  createPart(item: PartFactory) {
     let part;
     if (item.type === "rect") {
       part = new RectanglePart(item);
