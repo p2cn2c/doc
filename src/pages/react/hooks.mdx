@@ -281,4 +281,218 @@ const MyInput = forwardRef(function MyInput(props, ref) {
 
 - undefined return
 
+## useLayoutEffect
+
+- useLayoutEffect는 성능이 저하될 수 있다. 가능하면 useEffect를 쓰자.
+- 브라우저가 화면을 다시 그리기 전에 레이아웃을 측정할 수 있게 해줌.
+
+```ts
+useLayoutEffect(setup, dependencies);
+```
+
+```ts
+import { useState, useRef, useLayoutEffect } from "react";
+
+function Tooltip() {
+  const ref = useRef(null);
+  const [tooltipHeight, setTooltipHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const { height } = ref.current.getBoundingClientRect();
+    setTooltipHeight(height);
+  }, []);
+
+  // ...
+}
+```
+
+### Parameters
+
+- setup: Effect의 로직이 포함된 기능. cleanup 함수를 반환할 수도 있음. 컴포넌트가 DOM에 추가되기 전에 리액트는 setup 기능을 실행함. 변경된 디펜던시를 사용해 다시 렌더링할때마다 리액트는 먼저 이전값을 사용해 cleanup을 실행하고, 새 값을 사용해 setup을 실행함.
+- dependencies(optional): 코드 내부에서 사용하는 모든 반응값의 목록.
+
+### Return
+
+- undefined return
+
+### Caveats
+
+- Effect는 클라이언트에서만 실행됨.
+- useLayoutEffect 내부 코드와 여기에 예약된 모든 상태 업데이트는 브라우저가 화면을 다시 그리는걸 차단함(paint 차단). 과도하게 사용하면 앱 속도가 느려질 수 있으니 가능하면 useEffect를 사용할 것.
+- useEffect를 사용하는 경우, React는 브라우저가 useEffect 내부의 상태 업데이트를 처리하기 전에 화면을 그리도록 해서 layout 조정전에 그린 화면이 보일 수 있다.
+
+## useInsertionEffect
+
+- CSS-in-JS 라이브러리 사용자를 위한 것(동적 스타일 삽입).
+- layout effect가 실행되기 전에 DOM에 요소를 삽입할 수 있다.
+
+```ts
+useInsertionEffect(setup, dependencies);
+```
+
+```ts
+import { useInsertionEffect } from "react";
+
+// Inside your CSS-in-JS library
+function useCSS(rule) {
+  useInsertionEffect(() => {
+    // ... inject <style> tags here ...
+  });
+  return rule;
+}
+```
+
+### Parameters
+
+- setup: Effect의 로직이 포함된 기능.
+- dependencies(optional): 코드 내부에서 참조하는 모든 반응값의 목록.
+
+### Return
+
+- undefined return
+
+### Caveats
+
+- Effect는 클라이언트에서만 실행됨.
+- useInsertionEffect 내부에서는 state를 업데이트 할 수 없음.
+- 시간이 지나도 ref는 첨부되지 않는다.
+- DOM이 업데이트 되기 전이나 후에 실행될 수 있다. 특정 시간에 업데이트되는 DOM에 의존해서는 안된다.
+- 모든 Effect에 대한 cleanup을 실행하고, 모든 Effect에 대한 setup을 수행하는 다른 종류의 Effect와는 달리, 한번에 하나의 컴포넌트를 정의하고 설정함. 이로 인해 cleanup, setup 설정이 interleaving됨.
+
+## useReducer
+
+- 컴포넌트에 reducer를 추가할 수 있는 hook.
+
+```ts
+const [state, dispatch] = useReducer(reducer, initialArg, init);
+```
+
+```ts
+import { useReducer } from "react";
+
+function reducer(state, action) {
+  switch (action.type) {
+    case "incremented_age": {
+      return {
+        name: state.name,
+        age: state.age + 1,
+      };
+    }
+    case "changed_name": {
+      return {
+        name: action.nextName,
+        age: state.age,
+      };
+    }
+  }
+  throw Error("Unknown action: " + action.type);
+}
+
+function MyComponent() {
+  const [state, dispatch] = useReducer(reducer, { age: 42 });
+  // ...
+}
+
+function handleClick() {
+  dispatch({ type: "incremented_age" });
+  // ...
+}
+```
+
+### Parameters
+
+- reducer: state가 업데이트 되는 방법을 지정하는 reducer 함수. 순수함수, state와 action을 인수로 가져와야하고, 다음 state를 반환해야 한다.
+- initialArg: 초기 state가 계산되는 값.
+- init(optional): 초기 상태를 반환해야 하는 초기화 함수. 지정되지 않은 경우 초기 상태는 initialArg로 설정됨. 그렇지 않으면 초기 상태는 init(initialArg)호출 결과로 설정됨.
+
+- init 함수를 전달하면 init 함수는 초기화 중에만 실행됨. 컴포넌트가 리랜더링 될 때는 실행되지 않음.
+- init 함수 없이 init(initialArg)를 initialArg에 초기 상태를 직접 전달하면 모든 렌더링에서 함수가 실행됨. 동작에 눈에 띄는 차이는 없지만 효율성이 떨어짐.
+
+### Return
+
+- [currentState, dispatch] 반환.
+- currentState: 첫번째 렌더링 중에는 initialArg / init(initialArg)로 설정됨.
+- dispatch: state를 다른 값으로 업데이트하고 다시 렌더링을 트리거 할 수 있는 함수.
+
+- dispatch(action)은 사용자가 수행한 작업을 받음. return 값 없음.
+- dispatch 함수는 다음 렌더링에 대한 staet 변수만 업데이트함.
+
+## useContext
+
+- 컴포넌트의 context를 읽고 구독할 수 있다.
+
+```ts
+const value = useContext(SomeContext);
+```
+
+```ts
+import { useContext } from "react";
+
+function MyComponent() {
+  const theme = useContext(ThemeContext);
+  // ...
+}
+```
+
+### Parameters
+
+- someContext: createContext를 사용해 만든 컨텍스트. 컨텍스트 자체는 정보를 보유하지 않으며, 컴포넌트에서 제공하거나 읽을 수 있는 정보종류만 나타낸다.
+
+### Return
+
+- 컴포넌트에 대한 컨텍스트 값을 반환함. 호출한 컴포넌트 위에 트리에서 가장 가까운 SomeConent.createContext로 전달되는 것으로 결정됨.
+- createcontext에서 반환한 값은 항상 최신 상태이다. 리액트는 컨텍스트가 변경되면 컨텍스트를 읽는 컴포넌트를 자동으로 다시 렌더링한다.
+
+### Caveats
+
+- 컴포넌트 안에서 호출된 useContext()는 같은 컴포넌트에서 반환된 provider의 영향을 받지 않는다. useContext() 호출을 수행하는 컴포넌트 위의 <Context.Provider>가 있어야 한다.
+
+## createContext
+
+```ts
+
+```
+
+### Parameters
+
+### Return
+
+### Caveats
+
+## useCallback
+
+```ts
+
+```
+
+### Parameters
+
+### Return
+
+### Caveats
+
+## useTransition
+
+```ts
+
+```
+
+### Parameters
+
+### Return
+
+### Caveats
+
+## startTransition
+
+```ts
+
+```
+
+### Parameters
+
+### Return
+
+### Caveats
+
 </MainLayout>
