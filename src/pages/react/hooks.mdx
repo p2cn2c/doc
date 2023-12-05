@@ -171,7 +171,8 @@ function TodoList({ todos, tab }) {
 
 ## memo
 
-- prop이 변경되지 않은 경우, 컴포넌트를 다시 렌더링하는 걸 건너뛸 수 있음
+- 같은 props로 렌더링이 자주 일어나는 컴포넌트에서 사용
+- => prop이 변경되지 않은 경우, 컴포넌트를 다시 렌더링하는 걸 건너뛸 수 있음
 - 컴포넌트를 래핑해 컴포넌트의 memoized 버전을 얻을 수 있음
 - 성능 최적화이지 보장이 아님
 
@@ -187,7 +188,8 @@ const SomeComponent = memo(function SomeComponent(props) {
 ### Parameters
 
 - Component: memoize 하고 싶은 컴포넌트. 컴포넌트를 수정하지 않고 메모된 새 컴포넌트를 반환함. forwardRef 허용됨
-- arePropsEqual(optional): prop이 이전 prop과 새 prop이 동일한 경우 반환해야 함. 일반적으로 지정하지 않음.
+- arePropsEqual(optional): prop이 이전 prop과 새 prop이 동일한 경우 반환해야 함. 일반적으로 지정하지 않음.(ex. areEqual(prevProps, nextProps))
+- memo는 props 또는 props의 객체를 비교할 때 얕은(shallow) 비교를 한다. 비교 방식을 수정하고 싶다면 두번째 매개변수로 비교 함수를 만들어서 넘겨주면 된다.
 
 ### Returns
 
@@ -445,54 +447,203 @@ function MyComponent() {
 
 ### Caveats
 
-- 컴포넌트 안에서 호출된 useContext()는 같은 컴포넌트에서 반환된 provider의 영향을 받지 않는다. useContext() 호출을 수행하는 컴포넌트 위의 <Context.Provider>가 있어야 한다.
+- 컴포넌트 안에서 호출된 useContext()는 같은 컴포넌트에서 반환된 provider의 영향을 받지 않는다. useContext() 호출을 수행하는 컴포넌트 위의 \<Context.Provider>가 있어야 한다.
 
 ## createContext
 
-```ts
+- 컴포넌트가 제공하거나 읽을 수 있는 context를 만듦니다.
 
+```ts
+import { createContext } from "react";
+const SomeContext = createContext(defaultValue);
+```
+
+```ts
+// context provider로 컴포넌트를 랩핑해서 내부의 모든 컴포넌트에 대해 이 context 값을 지정
+// value: 이 provider 내에서 context 를 읽는 모든 구성요소에 전달하려는 값.
+<ThemeContext.Provider value={theme}>
+  <Page />
+</ThemeContext.Provider>;
+
+function Button() {
+  //  useContext를 사용해 context를 읽음.
+  const theme = useContext(ThemeContext);
+  return <button className={theme} />;
+}
 ```
 
 ### Parameters
 
+- defaultValue: context를 읽는 컴포넌트 위의 트리에 일치하는 context provider가 없는 경우 context에 포함하려는 값. 기본값이 없으면 null 지정.
+
 ### Return
 
-### Caveats
+- createContext 객체를 return
+- context object 자체에는 정보가 포함되어있지 않음.
+- SomeContext.Provider: 컴포넌트에 context 값을 제공할 수 있음
+- SomeContext.Consumer: context 값을 읽음. 거의 사용되지 않음.
 
 ## useCallback
 
-```ts
+- 리랜더링 사이에 함수정의를 캐싱할 수 있다.
 
+```ts
+const cachedFn = useCallback(fn, dependencies);
+```
+
+```ts
+const handleSubmit = useCallback(
+  (orderDetails) => {
+    post("/product/" + productId + "/buy", {
+      referrer,
+      orderDetails,
+    });
+  },
+  [productId, referrer]
+);
 ```
 
 ### Parameters
 
+- fn: 캐싱하려는 함수값. 초기렌더링 중에 함수를 다시 반환함(호출하지 않음)
+- 마지막 렌더링 이후 dependencies가 변경되지 않은 경우, 동일한 함수를 다시 제공. 변경되면 렌더링 중에 전달한 함수를 제공하고 나중에 다시 사용할 수 있도록 저장함. 함수를 호출하지 않기 때문에 반환된 함수로 호출 시기와 호출 여부를 결정할 수 있음.
+- dependencies가: 코드 내부에서 참조되는 모든 반응값의 목록.
+
 ### Return
 
+- 초기 렌더링시 전달한 fn 함수를 return함.
+- 리랜더링 중에는 마지막 렌더링에서 이미 저장된 함수를 return하거나(종속성이 변경되지 않은 경우), 렌더링 중에 전달한 fn을 반환함(종속성이 변경된 경우)
+
 ### Caveats
+
+- 리액트는 특별한 이유가 없는한 캐시된 함수를 버리지 않음.
+- JavaScript에서 a function () {}또는 () => {}항상 새로운 함수를 생성함. memo 최적화를 사용할 때, 내부에서 사용하는 함수에도 useCallback을 사용해줘야 최적화가 작동함.
+- useMemo는 함수 결과를 캐싱하고, useCallback은 함수 자체를 캐싱함.
+
+### useMemo vs useCallback
+
+- 주의: 리액트는 고도로 최적화되어있고, 리랜더링은 생각만큼 느리거나 비용이 들지 않음. 앱이 느려지는 거를 발견하면 리액트 프로파일러를 사용해 느린 렌더링을 추적하고, 앱 구조를 재구성해보고, 마지막 수단으로 useMemo나 useCallback을 사용하기를 권장함.
+
+useMemo는
+
+- 결과값 계산 캐싱
+- 특정 디펜던시가 변경될 경우에만 연산 실행
+- useCase: 무거운 연산 캐싱
+- useCase: 변경되지 않는 array, object 캐싱
+- useMemo((...)=> fn, deps) === useCallback(fn, deps)
+
+useCallback은
+
+- 함수 자체를 캐싱
+- Use Case1: 자식 컴포넌트에 props로 함수를 전달할 경우. 함수를 매번 재호출 하지 않도록 함
+- Use Case2: 외부에서 값을 가져오는 api를 호출할 경우. 호출 함수를 캐싱해, 같은 api를 여러번 호출하지 않도록 함.
+
+```ts
+// 함수는 값이 아니라 참조로 비교됨. 즉 function(){}와 () => {}는 매번 다른 함수로 여겨짐.
+// 함수를 전달받는 자식 컴포넌트에서는 props가 변경되었다고 여겨, 같은 값을 반환하더라도 매번 리랜더링이 발생함.
+// 함수를 재사용하기 위해 useCallback 사용.
+const functionOne = function () {
+  return 5;
+};
+const functionTwo = function () {
+  return 5;
+};
+// 서로의 참조가 다르기 때문에 false
+console.log(functionOne === functionTwo);
+```
+
+```ts
+import React, { useState, useEffect } from "react";
+
+function Profile({ userId }) {
+  const [user, setUser] = useState(null);
+
+  // useCallback을 쓰지 않게 되면 fetchUser가 매번 재호출돼서 무한루프에 빠지게 됨.
+  const fetchUser = useCallback(
+    () =>
+      fetch(`https://your-api.com/users/${userId}`)
+        .then((response) => response.json())
+        .then(({ user }) => user),
+    [userId]
+  );
+
+  useEffect(() => {
+    fetchUser().then((user) => setUser(user));
+  }, [fetchUser]);
+
+  // ...
+}
+```
 
 ## useTransition
 
-```ts
+- UI를 차단하지 않고 state를 업데이트 할 수 있다.
 
+```ts
+const [isPending, startTransition] = useTransition();
 ```
 
 ### Parameters
 
+- 사용하지 않음
+
 ### Return
 
+- [isPending, startTransition]
+- isPending: 보류중인 transition이 있는지 여부를 알려주는 flag
+- startTransition: state 업데이트를 transition으로 표시할 수 있는 함수
+
+```ts
+function TabContainer() {
+  const [isPending, startTransition] = useTransition();
+  const [tab, setTab] = useState("about");
+
+  function selectTab(nextTab) {
+    startTransition(() => {
+      setTab(nextTab);
+    });
+  }
+  // ...
+}
+```
+
+- startTransition(scope)
+- scope: 함수를 호출해 일부 state를 업데이트 하는 set 함수. scope함수 중에 동기적으로 예약된 모든 상태 업데이트를 transition으로 표시.
+- non-blocking, 원하지 않는 loading indicator가 표시되지 않음
+
 ### Caveats
+
+- set state에 접근할 수 있는 경우에만 업데이트를 transition으로 래핑할 수 있음. prop이나 custom hook에 대한 응답으로 transition을 하려면 useDeferredValue를 사용할 것.
+- startTransition에 전달하는 함수는 동기식이어야 함. 리액트는 이 함수를 즉시 실행해, 실행되는 동안 발생하는 모든 상태 업데이트를 transition으로 표시함.
+- transition으로 표시된 상태 업데이트는 다른 상태 업데이트에 의해 중단됨.
+- 텍스트 입력을 제어하는데 사용할 수 없음.
+- 진행중인 transition이 여러개인 경우, 리액트는 이를 일괄처리함.
 
 ## startTransition
 
-```ts
+- UI를 차단하지 않고 상태를 업데이트 할 수 있다.
+- transition pending 여부를 추적하는 플래그를 제공하지 않는다는 점을 빼면 useTransition과 유사함.
 
+```ts
+startTransition(scope);
 ```
 
 ### Parameters
 
+- scope: 함수를 호출해 일부 state를 업데이트 하는 set 함수. scope함수 중에 동기적으로 예약된 모든 상태 업데이트를 transition으로 표시.
+- non-blocking, 원하지 않는 loading indicator가 표시되지 않음
+
 ### Return
 
+- X
+
 ### Caveats
+
+- transition이 보류중인지 여부를 추적하는 방법을 제공하지 않음. transition이 진행되는 동안 pending Indicator를 표시하려면 useTransition이 필요함.
+- set state에 접근할 수 있는 경우에만 업데이트를 transition으로 래핑할 수 있음. prop이나 custom hook에 대한 응답으로 transition을 하려면 useDeferredValue를 사용할 것.
+- startTransition에 전달하는 함수는 동기식이어야 함. 리액트는 이 함수를 즉시 실행해, 실행되는 동안 발생하는 모든 상태 업데이트를 transition으로 표시함.
+- transition으로 표시된 상태 업데이트는 다른 상태 업데이트에 의해 중단됨.
+- 텍스트 입력을 제어하는데 사용할 수 없음.
+- 진행중인 transition이 여러개인 경우, 리액트는 이를 일괄처리함.
 
 </MainLayout>
