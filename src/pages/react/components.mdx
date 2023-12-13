@@ -3,84 +3,107 @@ import MainLayout from "../../layouts/MainLayout.astro";
 <MainLayout>
 # React Components
 
-## Suspense
+## Fragment
 
--
+- 주로 `<>...</>` 문법으로 사용된다. 요소를 감싸는 node없이 묶을 때 사용한다.
 
 ```ts
-
+<>
+  <OneChild />
+  <AnotherChild />
+</>
 ```
 
 ### Parameters
 
--
-
-### Return
-
--
+- key(optional): 명시적 구문으로 선언된 조각에는 키를 넣을 수 있다.
 
 ### Caveats
 
--
+- key를 전달하려면 `<></>` 구문을 사용할 수 없다. Fragment에서 명시적으로 가져와서 써야 한다.
+
+```ts
+<Fragment key={yourKey}>...</Fragment>
+```
 
 ## StrictMode
 
--
+- 개발 초기에 구성 요소의 일반적인 버그를 찾을 수 있다.
+- 내부 구성 요소 트리에 대한 추가 개발 동작 및 경고를 활성화하는 데 사용된다.
+
+- 컴포넌트는 불순한 렌더링으로 인해 발생한 버그를 찾기 위해 추가 시간을 다시 렌더링한다 .
+- 컴포넌트는 효과 정리 누락으로 인해 발생한 버그를 찾기 위해 추가 시간 동안 효과를 다시 실행한다 .
+- 더 이상 사용되지 않는 API의 사용 여부를 컴포넌트에서 확인한다.
 
 ```ts
+<StrictMode>
+  <App />
+</StrictMode>;
 
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+
+const root = createRoot(document.getElementById("root"));
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
 ```
-
-### Parameters
-
--
-
-### Return
-
--
 
 ### Caveats
 
--
+- 내부 모든 컴포넌트가 검사되었음을 확인할 수 있다.
+- 엄격 모드 검사는 개발 중에만 실행 되지만 코드에 이미 존재하지만 프로덕션에서는 안정적으로 재현하기 어려울 수 있는 버그를 찾는 데 도움이 된다.
 
 ## Profiler
 
--
+- React 트리 프로그래밍 방식으로 렌더링 성능을 측정할 수 있다.
+- 렌더링 성능을 측정하려면 컴포넌트 트리를 Profiler로 랩핑하면 된다.
 
 ```ts
-
+<Profiler id="App" onRender={onRender}>
+  <App />
+</Profiler>
 ```
 
 ### Parameters
 
--
+- id: 축정 중인 UI 부분을 식별하는 문자열
+- onRender: 프로파일링된 트리 내부의 컴포넌트가 업데이트될 때마다 React가 호출하는 콜백. 렌더링된 내용과 소요된 시간에 대한 정보를 받음.
 
 ### Return
 
--
+- onRender 콜백은 렌더링에 대한 정보를 포함해 호출함.
+- id: 방금 커밋한 트리 id의 문자열. 트리의 어느 부분이 커밋되었는지 식별 가능.
+- phase: "monut", "update", "nested-update".
+- actualDuration: 현재 업데이트에 대해 해당 하위 항목을 렌더링하는데 소요된 시간(ms). 하위 트리가 메모 기능을 얼마나 잘 활용하는지 나타냄.
+- baseDuration: 최적화 없이 전체 하위 트리를 다시 렌더링하는데 걸리는 시간을 추정하는 ms. 트리에 있는 각 컴포넌트의 가장 최근 렌더링 기간을 합산해 계산됨. 최악의 렌더링 비용을 추정함.
+- startTime: 현재 업데이트 렌더링을 시작한 시점에 대한 타임스탬프
+- commitTime: 현재 업데이트한 커밋 시점에 대한 타임스탬프. 커밋의 모든 프로파일러간에 공유되므로 그룹화 가능함.
 
 ### Caveats
 
--
+- 프로덕션 빌드에서는 비활성화됨.
 
-## Fragment
+## Suspense
 
--
+- 하위 항목이 로드를 완료할 때까지 대체를 표시할 수 있다.
 
 ```ts
-
+<Suspense fallback={<Loading />}>
+  <SomeComponent />
+</Suspense>
 ```
 
 ### Parameters
 
--
-
-### Return
-
--
+- children: 렌더링하려는 실제 UI. 렌더링하는 동안 일시 중지되면 Suspense boundary가 callback 렌더링으로 전환됨.
+- fallback: 로드가 완료되지 않은 경우 실제 UI 대신 렌더링할 대체 UI. 로딩스피너나 스켈레톤 같은 것. 렌더링하는 동안 일시중지되면 가장 가까운 상위 Suspense boundary가 활성화됨.
 
 ### Caveats
 
--
+- 리액트는 처음으로 마운트 되기 전에 일시중단된 렌더링 상태를 유지하지 않음. 컴포넌트가 로드되면 정지된 트리를 처음부터 다시 렌더링을 시도함.
+- 리액트가 다시 일시중단되어 이미 표시된 콘텐츠를 숨겨야 하는 경우, 콘텐츠 트리에서 layout effect를 cleanup함. 콘텐츠가 다시 표시될 준비가 되면 리액트는 layout effect를 다시 실행함. 이렇게해서 DOM layout을 측정하는 effect가 큰 콘텐츠가 숨겨져 있는 동안 이 작업을 수행하지 않도록 함.
 
 </MainLayout>

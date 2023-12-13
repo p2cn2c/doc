@@ -37,6 +37,10 @@ export const SIDEBAR = [
     text: "React Hooks",
     link: `${DEFAULT_URL}/react/hooks`,
   },
+  {
+    text: "React Components",
+    link: `${DEFAULT_URL}/react/components`,
+  },
 
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },
