@@ -646,4 +646,102 @@ startTransition(scope);
 - 텍스트 입력을 제어하는데 사용할 수 없음.
 - 진행중인 transition이 여러개인 경우, 리액트는 이를 일괄처리함.
 
+## useDeferredValue
+
+- UI의 일부 업데이트를 연기할 수 있다.
+
+```ts
+const deferredValue = useDeferredValue(value);
+
+function SearchPage() {
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  // ...
+}
+```
+
+### Parameters
+
+- value: 연기하려는 값.
+
+### Return
+
+- 초기 렌더링 중에 반환된 지연값은 사용자가 제공한 값과 동일함.
+- 업데이트 중에 React는 먼저 이전값으로 다시 렌더링을 시도한 다음(이전값 반환) 백그라운드에서 다시 새 값으로 렌더링 시도(업데이트 된 값 반환)
+
+### Caveats
+
+- 전달하는 값은 기본값(문자열, 숫자) 이거나 렌더링 외부에서 생성된 객체여야함. 렌더링 중에 새 객체를 생성하고 즉시 전달하면 렌더링할때마다 달라지므로 불필요한 백그라운드 렌더링이 다시 발생함.
+- Suspense에 통합되었음.
+- 자체적으로 추가 네트워트 요청을 방지하지는 않음.
+- useDeferredValue에 의해 발생한 백그라운드 리랜더링은 화면에 커밋될 때까지 Effect를 실행하지 않음.
+
+## useDebugValue
+
+- React DevTools 의 사용자 정의 Hook에 라벨을 추가할 수 있다.
+
+```ts
+useDebugValue(value, format);
+
+import { useDebugValue } from "react";
+
+function useOnlineStatus() {
+  // ...
+  useDebugValue(isOnline ? "Online" : "Offline");
+  // ...
+}
+```
+
+### Parameters
+
+- value: React Devtools에 표시하려는 값
+- format(optional): 서식 지정 기능. Devtools는 value 인수로 format 함수를 호출한 다음 반환된 format된 값을 표시함.
+
+### Return
+
+- X
+
+## useId
+
+- 접근성 속성에 있는 고유 ID를 생성할 수 있다.
+
+```ts
+const id = useId();
+```
+
+### Parameters
+
+- X
+
+### Return
+
+- 특정 컴포넌트의 이 특정 호출과 관련된 고유 ID 문자열
+
+### Caveats
+
+- 목록에서 key를 생성하는데 사용해서는 안된다. 데이터에서 생성되어야 한다.
+
+## lazy
+
+- 처음 렌더링 될 때까지 컴포넌트의 로드를 연기할 수 있다.
+
+```ts
+const SomeComponent = lazy(load);
+
+import { lazy } from "react";
+const MarkdownPreview = lazy(() => import("./MarkdownPreview.js"));
+```
+
+### Parameters
+
+- load: Promise 또는 thenable(Promise-like object with a then method). 리액트는 return된 컴포넌트를 처음 렌더링하려고 시도할 때까지 호출하지 않는다. 처음 리액트가 load를 호출한 후, 그게 완료될 때까지 기다리고, .default를 리액트의 컴포넌트로 렌더링한다. return된 Promise나 Promise의 resolved된 값은 모두 캐시되므로 리액트는 load를 여러번 호출하지 않는다. Promise가 deny되면 가장 가까운 error boundary가 거부이유를 throw한다.
+
+### Return
+
+- lazy: 트리에서 렌더링할 수 있는 리액트 컴포넌트를 return한다. lazy 리액트 컴포넌트가 로드되는 동안 렌더링을 시도하면 suspend된다.
+
+### Caveats
+
+-
+
 </MainLayout>
