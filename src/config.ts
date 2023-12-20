@@ -41,6 +41,10 @@ export const SIDEBAR = [
     text: "React Components",
     link: `${DEFAULT_URL}/react/components`,
   },
+  {
+    text: "React APIs",
+    link: `${DEFAULT_URL}/react/api`,
+  },
 
   // { text: "Core", header: true },
   // { text: "Introduction", link: `${DEFAULT_URL}/core/introduction` },
