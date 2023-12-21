@@ -5,38 +5,276 @@ import MainLayout from "../../layouts/MainLayout.astro";
 
 ## createPortal
 
-```ts
+- 일부 하위 요소를 DOM의 다른 부분으로 렌더링할 수 있다.
+- 포털은 DOM 노드의 물리적 배치만 변경한다.
+- 다른 방법으로 포털에 렌더링하는 JSX는 이를 렌더링하는 React 컴포넌트의 하위 노드 역할을 한다.
+- 예를 들어, 자식은 부모 트리에서 제공하는 컨텍스트에 액세스할 수 있으며, 이벤트는 React 트리에 따라 자식에서 부모로 버블링된다.
 
+```ts
+import { createPortal } from "react-dom";
+
+<div>
+  <SomeComponent />
+  {createPortal(children, domNode, key)}
+</div>;
+```
+
+```ts
+<div>
+  <p>This child is placed in the parent div.</p>
+  {createPortal(
+    <p>This child is placed in the document body.</p>,
+    document.body
+  )}
+</div>
 ```
 
 ### Parameters
 
--
+- children: JSX 일부
+- domNode: DOM 노드
+- key(optional): portal의 key로 사용할 고유한 문자열 또는 숫자
 
 ### Return
 
--
+- JSX에 포함되거나 React 구성 요소에서 반환될 수 있는 React 노드를 반환
 
 ### Caveats
 
--
+- 포털의 이벤트는 DOM 트리가 아닌 React 트리에 따라 전파됨. 이로 인해 문제가 발생하는 경우 포털 내부에서 이벤트 전파를 중지하거나 포털 자체를 React 트리에서 위로 이동시킬 것.
 
 # Client APIs
 
 ## createRoot
 
+- 브라우저 DOM 요소 내부에 콘텐츠를 표시하기 위한 React 루트를 생성하기 위해 호출한다.
+- React는 domNode의 루트를 생성하고 그 내부의 DOM 관리를 맡는다.
+- 루트를 만든 후에는 그 안에 React 컴포넌트를 표시하기 위해 root.render를 호출해야한다.
+
+```ts
+const root = createRoot(domNode, options);
+```
+
+```ts
+import { createRoot } from "react-dom/client";
+
+const domNode = document.getElementById("root");
+const root = createRoot(domNode);
+
+root.render(<App />);
+```
+
+### Parameters
+
+- domNode: DOM 요소. 리액트는 이 DOM요소에 대한 루트를 생성하고 렌더링된 React 콘텐츠를 표시한다.
+- options(optional): React root에 대한 옵션이 포함된 객체
+- > onRecoverableError: React가 자동으로 오류를 복구할 때 호출되는 콜백
+- > identifierPrefix: React가 생성한 id에 사용하는 문자열 접두사
+
+### Return
+
+- render, unmount 메소드가 담긴 object
+
+### Caveats
+
+- 앱이 서버에서 렌더링하는 경우 createRoot를 지원하지 않는다. hydrateRoot를 대신 사용하라.
+- 루트의 DOM노드에 React가 서버에서 또는 빌드 중에 생성한 HTML이 포함되어 있는 경우 hydrateRoot를 사용하라.
+- render를 동일한 루트에서 한번 이상 실행하면, 리액트는 최신 JSX를 반영하기 위해 필요에 따라 DOM을 업데이트한다. 리액트는 DOM의 어느 부분을 재사용할 수 있는지, 이전에 렌더링된 트리와 일치하여 다시 생성해야 하는 부분을 결정한다.
+
 ## hydrateRoot
+
+- hydrateRoot를 사용하면 이전에 react-dom/server에서 HTML 컨텐츠를 생성한 브라우저 DOM 노드 내에 React 구성 요소를 표시할 수 있다.
+
+```ts
+const root = hydrateRoot(domNode, reactNode, options);
+```
+
+- 서버 환경에서 React에 의해 이미 렌더링된 기존 HTML에 React를 첨부하기 위해 호출한다.
+
+```ts
+import { hydrateRoot } from "react-dom/client";
+
+const domNode = document.getElementById("root");
+const root = hydrateRoot(domNode, reactNode);
+```
+
+### Parameters
+
+- domNode: 서버의 루트 요소로 렌더링된 DOM 요소
+- reactNode: 기존 HTML을 렌더링하는데 사용되는 리액트 노드. (일반적으로 `<App/>`, renderToPipeableStream(`<App />`))
+- options(optional): onRecoverableError, identifierPrefix
+
+### Return
+
+- render, unmount 메소드가 담긴 object
+
+### Caveats
+
+- 렌더링된 콘텐츠가 서버에서 렌더링된 콘텐츠와 동일할 것으로 예상한다. 불일치를 버그로 처리하고 수정해야 한다.
+- 개발 모드에서 React는 hydrate 중 불일치에 대해 경고한다. 불일치가 발생할 경우 속성 차이가 패치된다는 보장은 없다. 이는 대부분의 앱에서 불일치가 거의 발생하지 않고 모든 마크업을 검증하는 데 엄청나게 많은 비용이 들기 때문에 성능상의 이유로 중요하다.
+- 앱에서는 hydrateRoot 호출이 한 번만 있을 수 있다 . 프레임워크를 사용하는 경우 프레임워크가 이 호출을 대신 수행할 수 있다.
+- HTML이 아직 렌더링되지 않은 상태에서 앱이 클라이언트 렌더링된 경우에는 hydrateRoot 사용이 지원되지 않는다. createRoot를 대신 사용하자.
 
 # Server APIs
 
+- Server APIs for Node.js Streams: node js streams가 있는 환경에서만 사용가능
+- > renderToPipeableStream: react 트리를 pipe가능한 node stream으로 렌더링
+- > renderToStaticNodeStream: non-interactive react 트리를 node readable stream으로 렌더링
+- Server APIs for Web Streams: 브라우저 및 일부 최신 edge runtime을 포함하는 Web Streams 환경에서만 사용할 수 있다.
+- > renderToReadableStream
+- Server APIs for non-streaming environments: 스트림을 지원하지 않는 환경에서 사용할 수 있다
+- > renderToString: React 트리를 문자열로 렌더링
+- > renderToStaticMarkup: non-interactive React 트리를 문자열로 렌더링
+
 ## renderToPipeableStream
 
-## renderToReadableStream
+- hydrateRoot to make the server-generated HTML interactive.
 
-## renderToStaticMarkup
+```ts
+const { pipe, abort } = renderToPipeableStream(reactNode, options);
+```
+
+```ts
+import { renderToPipeableStream } from "react-dom/server";
+
+const { pipe } = renderToPipeableStream(<App />, {
+  bootstrapScripts: ["/main.js"],
+  onShellReady() {
+    response.setHeader("content-type", "text/html");
+    pipe(response);
+  },
+});
+```
+
+### Parameters
+
+- reactNode: HTML로 렌더링하려는 React 노드
+- options(optional): 스트리밍 옵션이 있는 object
+
+### Return
+
+- pipe: HTML을 제공된 writable node.js stream으로 출력함. streaming을 enable 하려면 onShellReady에 있는 pipe를 호출. 아니면 크롤러나 정적 생성을 위해서는 onAllReady를 사용하라.
+- abort: 서버렌더링을 중단하고, 나머지는 클라이언트에서 렌더링 할 수 있다.
 
 ## renderToStaticNodeStream
 
+- 비대화형 React 트리를 Node.js 읽기 가능한 스트림으로 렌더링한다.
+
+```ts
+const stream = renderToStaticNodeStream(reactNode);
+```
+
+```ts
+import { renderToStaticNodeStream } from "react-dom/server";
+
+const stream = renderToStaticNodeStream(<Page />);
+stream.pipe(response);
+```
+
+### Parameters
+
+- reactNode: HTML로 렌더링하려는 React 노드
+- options(optional): 서버렌더링을 위한 객체
+
+### Return
+
+- HTML 문자열을 출력하는 readable Node.js stream
+- 결과 HTML은 클라이언트에서 hydrate 될 수 없다.
+
+### Caveats
+
+- renderToStaticNodeStream output을 hydrate 할 수 없다.
+- 이 메서드는 output을 반환하기 전에 모든 Suspense boundary가 완료될 때까지 기다린다.
+- React 18 부터는 모든 output을 버퍼링하기 때문에 실제로 스트리밍 이점을 제공하지 않는다.
+- 반환된 스트림은 utf-8로 인코딩된 바이트 스트림이다.
+
+## renderToReadableStream
+
+- React 트리를 읽기 가능한 웹 스트림으로 렌더링한다.
+
+```ts
+const stream = await renderToReadableStream(reactNode, options);
+```
+
+```ts
+import { renderToReadableStream } from "react-dom/server";
+
+async function handler(request) {
+  const stream = await renderToReadableStream(<App />, {
+    bootstrapScripts: ["/main.js"],
+  });
+  return new Response(stream, {
+    headers: { "content-type": "text/html" },
+  });
+}
+```
+
+### Parameters
+
+- reactNode: HTML로 렌더링하려는 React 노드
+- options(optional): 스트리밍 옵션이 있는 object
+
+### Return
+
+- Promise
+- shell 렌더링이 성공하면 Promise는 읽기 가능한 웹스트림으로 resolve됨
+- shell 렌더링이 실패하면 Promise가 reject됨.
+
+## renderToStaticMarkup
+
+- 비대화형 React 트리를 HTML 문자열로 렌더링한다.
+
+```ts
+const html = renderToStaticMarkup(reactNode);
+```
+
+```ts
+import { renderToStaticMarkup } from "react-dom/server";
+
+const html = renderToStaticMarkup(<Page />);
+```
+
+### Parameters
+
+- reactNode: HTML로 렌더링하려는 React 노드
+- options(optional) : 서버 렌더링을 위한 개체
+
+### Return
+
+- HTML 문자열
+
+### Caveats
+
+- output을 hydrate 할 수 없다.
+- Suspense 지원이 제한되어있다. 구성요소가 일시중단되면 renderToStaticMarkup즉시 폴백을 HTML로 보낸다.
+- renderToStaticMarkup은 브라우저에서 작동하긴 하지만 클라이언트 코드에서는 사용하지 않는 것이 좋다.
+
 ## renderToString
+
+- React 트리를 HTML 문자열로 렌더링한다.
+
+```ts
+const html = renderToString(reactNode);
+```
+
+```ts
+import { renderToString } from "react-dom/server";
+
+const html = renderToString(<App />);
+```
+
+### Parameters
+
+- reactNode: HTML로 렌더링하려는 React 노드
+- options(optional) : 서버 렌더링을 위한 개체
+
+### Return
+
+- HTML 문자열.
+
+### Caveats
+
+- Suspense 지원이 제한되어있다. 구성요소가 일시중단되면 renderToString 즉시 폴백을 HTML로 보낸다.
+- renderToString는 브라우저에서 작동하긴 하지만 클라이언트 코드에서는 사용하지 않는 것이 좋다.
 
 </MainLayout>
